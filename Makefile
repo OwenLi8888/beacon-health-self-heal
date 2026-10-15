@@ -19,6 +19,7 @@ setup:
 	docker compose up -d --wait --wait-timeout 900
 	env/wait_for_login.sh
 	if [ "$$fresh" = 1 ]; then
+	  docker compose exec -T mysql sh -c 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" exec mariadb -uroot openemr' < env/seed/seed.sql
 	  $(MAKE) snapshot
 	elif [ ! -f $(SNAP) ] || [ "$$(cat $(STAMP) 2>/dev/null)" != "$$($(VOL_STAMP))" ]; then
 	  echo "setup: existing DB volume has no matching snapshot and may not be clean; refusing to snapshot it." >&2
@@ -26,6 +27,7 @@ setup:
 	  exit 1
 	fi
 	env/check_login.sh
+	env/check_seed.sh
 
 snapshot:
 	$(LOAD_ENV)
@@ -48,6 +50,7 @@ reset:
 	gunzip -c $(SNAP) | docker compose exec -T mysql sh -c 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" exec mariadb -uroot'
 	echo "DB restored from $(SNAP)"
 	env/check_login.sh
+	env/check_seed.sh
 
 down:
 	docker compose down

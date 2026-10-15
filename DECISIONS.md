@@ -54,6 +54,18 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
 
 **Pick: real login.** Neither shortcut proves the thing every script depends on. A broken login would show up later as fake script failures.
 
+## Step 2: patient data
+
+### D6. Scripted SQL seed vs Synthea import
+
+| | SQL seed (`env/seed/seed.sql`) | Synthea + `openemr:ccda-import` |
+|---|---|---|
+| Cost | About 60 lines of SQL | Second container with Java, CCDA generation, Carecoordination module |
+| Time | Under an hour | Well over an hour (image has no Java, Synthea or devtools) |
+| Accuracy | Values chosen by hand, so expected results are known before any run | Random values, read back after import |
+
+**Pick: SQL seed.** The oracle needs known values, and each patient covers a case later steps test (latest isn't max, newest inserted first, shared last names, labs but no A1c, no labs).
+
 ## Setup notes (minor)
 - **MariaDB 12.3.3 (pinned by digest)** over MariaDB 11.8 LTS or MySQL 8: it's the exact pair OpenEMR's own production compose file ships and tests.
 - **Reset restores the DB only**, not OpenEMR's file storage. The scripts don't upload files; revisit if one ever does.
