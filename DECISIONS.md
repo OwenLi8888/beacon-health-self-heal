@@ -127,3 +127,33 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
 - **`@writes_data` marks the save step**, and `step_start` logs `"writes_data": true`. The step behaves the same; the policy reads the mark later.
 - **S2 reuses `search_patient` / `open_chart` from `scripts/read_a1c.py`** rather than moving them to `common.py`. That's the smallest diff, and it leaves S1, which already passed its baseline, unchanged.
 - **Fixed future weekday dates in the baseline.** The OpenEMR container runs on UTC, so "today" there is a day ahead of Toronto in the evening; fixed dates avoid that.
+
+## Block 1 (PRD v0.3): harness, injector, catalog
+
+### D11. Selector variants: hit the locators S1 uses vs literal id/class renames
+
+| | Drift on S1's own handles (placeholder, link role, button text, wrapping table) | Rename an id / class |
+|---|---|---|
+| Cost | Each variant needs the exact rendered string | Trivial |
+| Time | Same | Same |
+| Accuracy | All 4 break S1 and are 1-to-2 line heals | S1 never selects by id or class, so these don't break it |
+
+**Pick: drift on S1's handles.** Adding an id selector to S1 just so a rename can break it would change a baselined script to fit the test. That role/text locators survive id and class renames is a finding for the write-up.
+
+### D12. Script runs in a harness subprocess (`harness/child.py`) vs in the parent process vs the script's own `main()`
+
+| | Child process loads the script by path | In process | Script's `main()` |
+|---|---|---|---|
+| Cost | About 80 lines | Less | None |
+| Time | Same | Same | Same |
+| Accuracy | A crash or hang can't take down a batch; a sandbox copy runs the same way | A wedged browser kills the batch | Injection would have to live in agent-editable code |
+
+**Pick: child process.** The failing step comes from the scripts' own `step_end ok=false` events (stderr tee), so nothing in `scripts/` changed.
+
+## Block 1 notes (minor)
+- **Ground truth never goes in `runs/<id>/`.** The variant, labels and oracle detail go only to `logs/runs.jsonl`. An oracle failure writes an `error.json` that says only "outcome check failed", so the expected value can't leak.
+- **`context.route` misses requests that arrive by redirect.** Verified: `main.php`, reached by a 302 after the login POST, is never routed. sc_01 uses `add_init_script` with a MutationObserver instead. Every injector counts its hits, and a run with 0 hits is flagged, so a variant that silently does nothing can't pass as a break.
+- **Trimmed DOM = every visible frame, live-DOM walk.** Hidden nodes are judged by computed style, which a cloned tree loses. Dropped: scripts, styles, hidden inputs (CSRF), and all attributes except id/class/name/type/value/placeholder/role/aria-*/href/title/for/onclick and a few form states. If the total is over 30 KB, the largest frame is cut and the cut is marked. Measured 0.2 to 24.6 KB on the 5 variants. Session tokens in frame URLs are redacted.
+- **`sd_01` is 502 on every request**, so it fails at `login`. A mid-run outage on one endpoint is more realistic; it's next if site_down gets more variants.
+- **`results/injectors/verify.md` names variants.** The block 2 path guard has to deny `results/` as well as `oracle/`, `failures/`, `policy.py` and `logs/`.
+- **No Playwright trace zip yet.** v0.3 block 1 doesn't ask for one, and a trace would record the route rewrites, which the agent must not see.

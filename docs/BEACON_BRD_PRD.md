@@ -15,6 +15,44 @@ The number that matters most: **wrong-fix rate**, meaning a script that passes b
 
 ---
 
+## Scope update v0.3 (16 Oct): 5-hour cap. Overrides v0.2 and everything below
+
+Total build time is capped at about 5 hours. Environment, seed data and S1 (read A1c, oracle, 20/20 baseline) are done. Remaining build is about 4 hours, one hour per block:
+
+| Block | Build | Done when |
+|---|---|---|
+| 1 | Harness bundle (error, failing step, screenshot, trimmed DOM) + injector for `selector_changed` (4 variants) and `site_down` (1 control). Catalog with truth labels; 1 selector variant marked holdout | Each variant breaks S1 and un-breaks when off |
+| 2 | Heal agent: diagnose, minimal patch on a sandbox copy, rerun + oracle, 3-try cap, refuse non-script causes. Output includes cause, confidence, decision (auto_apply / escalate), diff. One JSON line per attempt with tokens and cost | Heals one selector variant end to end; refuses site_down with no patch |
+| 3 | Batch (each variant x 3 repeats, reset between) + scorecard: heal rate, wrong-fix rate, non-script patch rate, escalation correctness, tries, cost per heal. Dev vs holdout shown separately | Scorecard generated from logs alone |
+| 4 | One tuning round on dev misses, rerun, then holdout once. README, 1-page write-up, short demo recording | Fresh clone + `make setup` + one command reproduces the scorecard |
+
+**Cut for the cap:** S2 (booking), popup_modal (add only if block 2 finishes early), slow_page, login_changed, replay mode, adversarial cases, Haiku comparison. The write-up lists these under "next" with why.
+
+## Scope update v0.2 (15 Oct): narrower agent, made reliable (superseded by v0.3)
+
+**This section overrides anything below that conflicts with it.** Direction: focus hard on one or two features and make them reliable, rather than covering many failure types thinly.
+
+**The two features:**
+1. **Heal UI drift on read-only steps.** Failure types: `selector_changed` and `popup_modal` only. At least 8 variants each (about 2/3 dev, 1/3 holdout), 3 to 5 repeats per variant.
+2. **Refuse or escalate correctly.** Controls the agent must NOT patch: `site_down` (2 variants), `slow_page` beyond the wait cap (2 variants), and any fix on a data-writing step in S2 (e.g. Save button renamed). Target: 0 patches applied on these.
+
+**Cut or deferred:** `login_changed`, `browser_crash`, CDP capture (F4 uses `page.content()` + trimmed DOM), HTML viewer (F15), Haiku holdout comparison, most adversarial cases. Kept adversarial cases: decoy button with the same label (wrong-fix test) and the data-write rename (escalate test).
+
+**Both scripts stay.** S1 (read A1c) is where healing is measured. S2 (book appointment) mainly exists to test feature 2, since it's the data-writing workflow.
+
+**Merged build sessions (replaces B12 rows 5 to 10):**
+
+| Session | Combines | Done when |
+|---|---|---|
+| A | S2 + oracle (using S1 as the template) | 20/20 clean, DB diff shows exactly one new row |
+| B | Harness + artifact bundles + injector + catalog (only the types above) | Each variant breaks a script and un-breaks when toggled off; full bundle on failure |
+| C | Heal agent + policy + attempt log | Heals one selector variant end to end; refuses `site_down`; JSON line per attempt |
+| D | Batch runner + budget cap + scorecard + replay mode | Dev scorecard v1 generated from logs alone |
+
+Iteration (B10) gets the time saved: 3 tuning rounds instead of 2.
+
+---
+
 # Part A: BRD (business requirements)
 
 ## A1. Background
@@ -447,9 +485,9 @@ beacon-self-heal/
 
 | # | Question | Owner | Default if no answer |
 |---|---|---|---|
-| Q1 | Python or TypeScript? | Obinna | Python |
-| Q2 | Whose API key? | Obinna | Owen's, with batch budget cap |
-| Q3 | Mid-point check-in? | Obinna | Offer Tue 20 |
+| Q1 | Python or TypeScript? | Obinna | **Answered: Python is fine** |
+| Q2 | Whose API key? | Obinna | **Answered: Owen's key, reimbursed by Beacon.** Keep the $100 plan and batch caps; cost per heal is still a scorecard metric |
+| Q3 | Mid-point check-in? | Obinna | **Answered: yes, Tue 20 Oct.** Show the v1 dev scorecard, the failure taxonomy from round 1, and the trust policy draft |
 | Q4 | How are Beacon agents represented internally (scripts, step lists, recordings)? | Walkthrough call | Assume scripts |
 | Q5 | Which failure types do they see most often? | Walkthrough call | Weight equally |
 | Q6 | Are fixes per customer instance or shared across instances? | Walkthrough call | Per instance |

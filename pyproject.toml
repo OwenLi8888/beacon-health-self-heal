@@ -6,6 +6,7 @@ dependencies = [
     "playwright==1.64.0",
     "pymysql>=1.2.3",
     "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]

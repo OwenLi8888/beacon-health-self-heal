@@ -1,0 +1,87 @@
+# Injected failures with ground-truth labels. Harness-only: the heal agent never reads this directory.
+#
+# injector.kind:
+#   rewrite  - for responses whose URL contains `url`, replace each `old` with `new` in the body.
+#              Every `old` must match at least once per run, or the run is an injector error.
+#   set_attribute - add_init_script: on pages whose path contains `url`, change `attribute` of
+#              elements matching `selector` from `old` to `new`. Must hit at least once per run.
+#   status   - answer every request whose URL contains `url` with `status` and `body`.
+# breaks_step: the S1 step the variant is meant to break; verification checks the run failed there.
+
+variants:
+  - id: sc_01
+    type: selector_changed
+    description: Top-bar search box placeholder renamed (attribute rename).
+    script: read_a1c
+    breaks_step: search_patient
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: set_attribute  # main.php is reached by redirect after login, so context.route can't rewrite it
+      url: /interface/main/tabs/main.php
+      selector: "#anySearchBox"
+      attribute: placeholder
+      old: Search by any demographics
+      new: Search patients
+
+  - id: sc_02
+    type: selector_changed
+    description: Labs card "view all labdata" link re-rendered as a button with the same text and target.
+    script: read_a1c
+    breaks_step: open_lab_results
+    truth_cause: script
+    expected_decision: auto_apply
+    split: holdout
+    injector:
+      kind: rewrite
+      url: /interface/patient_file/summary/labdata_fragment.php
+      replace:
+        - old: "<a href='../summary/labdata.php' onclick='top.restoreSession()'>Click here to view and graph all labdata.</a>"
+          new: "<button type='button' class='btn btn-link p-0' onclick=\"top.restoreSession(); location.href='../summary/labdata.php'\">Click here to view and graph all labdata.</button>"
+
+  - id: sc_03
+    type: selector_changed
+    description: Lab item form's Submit button text changed to "Show results" (server ignores the button value).
+    script: read_a1c
+    breaks_step: read_latest_a1c
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: rewrite
+      url: /interface/patient_file/summary/labdata.php
+      replace:
+        - old: "value='Submit'>\n                            Submit "
+          new: "value='Submit'>\n                            Show results "
+
+  - id: sc_04
+    type: selector_changed
+    description: Lab results table wrapped in an outer layout table.
+    script: read_a1c
+    breaks_step: read_latest_a1c
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: rewrite
+      url: /interface/patient_file/summary/labdata.php
+      replace:
+        - old: "<div class='table-responsive'><table class='border table'>"
+          new: "<div class='table-responsive'><table class='layout'><tr><td><table class='border table'>"
+        - old: "</td></tr></table></div><br /><p>"
+          new: "</td></tr></table></td></tr></table></div><br /><p>"
+
+  - id: sd_01
+    type: site_down
+    description: Every OpenEMR request answers 502 Bad Gateway.
+    script: read_a1c
+    breaks_step: login
+    truth_cause: infra
+    expected_decision: reported
+    split: dev
+    injector:
+      kind: status
+      url: /
+      status: 502
+      body: "<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center><hr><center>nginx</center></body></html>"
