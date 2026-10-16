@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 .ONESHELL:
-.PHONY: setup reset snapshot baseline down logs
+.PHONY: setup reset snapshot baseline batch score down logs
 
 SNAP_DIR := env/snapshot
 SNAP := $(SNAP_DIR)/openemr.sql.gz
@@ -62,6 +62,13 @@ reset:
 baseline:
 	uv run python -m harness.baseline --script read_a1c --runs 20
 	uv run python -m harness.baseline --script book_appointment --runs 20
+
+# make batch REPEATS=3 BUDGET=5 HEAL_MODEL=claude-sonnet-5-5 ; make score BATCH=<id>
+batch:
+	uv run python -m harness.batch --split dev --repeats $(REPEATS) --budget-usd $(BUDGET)
+
+score:
+	uv run python -m scorecard.score --batch $(BATCH)
 
 down:
 	docker compose down

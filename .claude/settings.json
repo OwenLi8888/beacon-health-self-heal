@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -NonInteractive -Command \"[System.Media.SystemSounds]::Exclamation.Play(); Start-Sleep -Milliseconds 600\" >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -NonInteractive -Command \"[System.Media.SystemSounds]::Exclamation.Play(); Start-Sleep -Milliseconds 600\" >/dev/null 2>&1 || true",
+            "async": true,
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

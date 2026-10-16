@@ -33,6 +33,7 @@ class RunResult:
     script: str
     variant: str | None
     passed: bool
+    script_passed: bool = False  # script finished without raising; `passed` also needs the oracle
     failing_step: str | None = None
     error: str | None = None
     bundle_dir: str | None = None
@@ -62,7 +63,7 @@ def run(script: str, variant: str | None = None, case: tuple | None = None, rese
         raise RuntimeError(f"harness child crashed (exit {proc.returncode}): {proc.stderr.strip()[-2000:]}")
     child = json.loads(lines[-1])
 
-    result = RunResult(run_id, script, variant, passed=False, seconds=seconds,
+    result = RunResult(run_id, script, variant, passed=False, script_passed=child["ok"], seconds=seconds,
                        injector_unmatched=child["injector_unmatched"])
     oracle = None
     if child["ok"]:

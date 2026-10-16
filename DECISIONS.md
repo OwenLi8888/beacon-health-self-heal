@@ -157,3 +157,40 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
 - **`sd_01` is 502 on every request**, so it fails at `login`. A mid-run outage on one endpoint is more realistic; it's next if site_down gets more variants.
 - **`results/injectors/verify.md` names variants.** The block 2 path guard has to deny `results/` as well as `oracle/`, `failures/`, `policy.py` and `logs/`.
 - **No Playwright trace zip yet.** v0.3 block 1 doesn't ask for one, and a trace would record the route rewrites, which the agent must not see.
+
+## Blocks 2 and 3 (PRD v0.3): heal agent, policy, attempt log, batch, scorecard
+
+### D13. Applying the model's diff: match hunks by content vs `patch`/`git apply`
+
+| | Content match (ignore `@@` numbers) | GNU `patch` / `git apply` |
+|---|---|---|
+| Cost | About 40 lines, `agent/patch.py` | None |
+| Time | Same | Same |
+| Accuracy | Survives the wrong hunk headers models often write; refuses a hunk that matches 0 or 2+ places | Rejects good patches over off-by-N headers or miscounted lines |
+
+**Pick: content match.** A hunk that doesn't match exactly once is `patch_failed` and goes back to the agent. `diff_lines` for the policy is measured by the harness (difflib), not taken from the model's diff.
+
+### D14. Who calls the policy: agent loop vs a harness `judge` callback
+
+| | Harness `judge(sandbox, diagnosis)` | `agent/heal.py` imports `policy`, `harness.run` |
+|---|---|---|
+| Cost | One callback | None |
+| Time | Same | Same |
+| Accuracy | `agent/` imports nothing that knows the variant, oracle or policy (tested) | Agent code holds the variant id it needs for the rerun |
+
+**Pick: judge callback.** The agent gets back only pass/fail, the policy decision and the rerun's bundle.
+
+## Blocks 2 and 3 notes (minor)
+- **The original script is never overwritten.** `auto_apply` writes the approved diff to `runs/<run_id>/heal.diff`. Overwriting `scripts/read_a1c.py` mid-batch would make every later case start from a healed script.
+- **Tool cap without forced `tool_choice`.** Sonnet 5.5 rejects forced tool choice (400), so with one call left the agent gets a "call submit_diagnosis now" note. 8 calls with no submit counts as `no_submit` and the next attempt starts.
+- **Each attempt patches a fresh copy of the original.** The diff is always measured against the original. Attempts 2 and 3 see the last patch, why it failed, and the rerun's bundle.
+- **"Needed 3 tries → escalate" (PRD F11) is not in the policy.** The v0.3 brief lists only cause, confidence ≥ 0.8, diff ≤ 10, rerun + oracle pass. `touches_data_write` and a `@writes_data` line check were kept because they are free on S1. Tries per heal is on the scorecard.
+- **A rerun with script pass and oracle fail (wrong fix) goes to the next attempt.** It is never applied, and it counts toward the wrong-fix rate.
+- **The budget cap is checked between cases**, so a batch can overshoot by at most one case (about 3 attempts).
+- **The holdout split is locked in code** (`--split` choices = dev; `harness.heal` refuses non-dev variants) until the block 4 freeze.- **Reviewer fixes, before the first model run.**
+  - A patched script that crashes the harness child, or hangs, is logged as a failed attempt and retried, instead of killing the batch.
+  - An API error keeps the cost of the calls already made and ends the heal as `gave_up`.
+  - The policy's `@writes_data` range now includes the decorator line, so deleting the mark escalates.
+  - An `unknown` cause escalates. Only `site` and `infra` count as `reported` (PRD B7).
+  - The 8th tool call is reserved for `submit_diagnosis`, even when calls come in parallel.
+  - A retry keeps the last bundle that has a DOM.
