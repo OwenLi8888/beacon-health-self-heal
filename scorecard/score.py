@@ -67,7 +67,7 @@ def section(split: str, rows: list[dict]) -> list[str]:
            f"| Escalation correctness (final decision = expected / cases) | {rate(len(correct), len(finals))} |",
            f"| Cause correct (script vs site/infra / cases) | {rate(len(diag_ok), len(finals))} |",
            f"| Diagnosis accuracy (cause_detail = failure type / cases) | {rate(len(detail_ok), len(finals))} |",
-           f"| Tries per heal (mean attempts, {len(healed)} heals) | {f'{tries:.2f}' if tries is not None else 'n/a'} |",
+           f"| Tries per heal (mean attempts over heals) | {f'{tries:.2f} ({len(healed)} heals)' if tries is not None else 'n/a (0 heals)'} |",
            f"| Cost per heal | {f'${cost / len(healed):.4f} (${cost:.4f} / {len(healed)})' if healed else f'n/a (${cost:.4f} spent, 0 heals)'} |",
            f"| Total cost | ${cost:.4f} |",
            f"| Non-script patches discarded by the harness | {ns_discarded} |", ""]

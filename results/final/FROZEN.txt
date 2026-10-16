@@ -1,0 +1,4 @@
+agent_version: v1
+commit: 94f0cabaae2d66716639f605c72090fc462ac768
+frozen: 2026-10-16T14:58:58-04:00
+The agent (agent/, policy.py) does not change after this commit.
