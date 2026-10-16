@@ -4,3 +4,5 @@ runs/
 logs/
 __pycache__/
 env/snapshot/
+.playwright-mcp/
+docs/PLAYBOOK.md
