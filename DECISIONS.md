@@ -92,3 +92,38 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
 - **Labs card expanded by default via `user_settings` in the seed.** With no row OpenEMR renders it collapsed and its link is hidden. Having the script toggle it would flip a saved preference and depend on prior state.
 - **Patient row picked by exact `Last, First` link name**, raising on 0 or more than 1. Searching "Delgado" returns Rosa and Elena; "first row" would read the wrong patient.
 - **Baseline rotates the 4 A1c patients and runs the script as a subprocess** after a reset each run. Rotation covers latest-isn't-max, newest-inserted-first and shared last names; a subprocess matches how the harness will run scripts.
+
+## Session A (PRD v0.2): S2 script and oracle
+
+### D8. "Provider not available" confirm: seed office hours vs accept the confirm in the script
+
+| | Seed In/Out Of Office events | Script accepts the confirm |
+|---|---|---|
+| Cost | 12 lines of seed SQL, full rebuild once | One dialog handler |
+| Time | Same | Same |
+| Accuracy | Valid slots save with no prompt; a taken slot or after-hours slot still prompts, and the dismissed prompt fails the save step | The same handler would also click through "slot already used" and double-book silently |
+
+**Pick: seed office hours** (08:00 to 17:00, every workday, both providers). OpenEMR shows the prompt on Save whenever the provider has no In Office time covering the slot.
+
+### D9. "No other rows changed": diff against a second copy of the snapshot vs capturing state before each run
+
+| | `openemr_snap` schema, diffed in SQL with `EXCEPT ALL` | Harness captures rows before the run |
+|---|---|---|
+| Cost | `make snapshot` also loads the clean DB into `openemr_snap` | The before-copy has to live outside the DB the agent can affect, and the harness has to remember to take it |
+| Time | About 6 s per check (283 tables) | Similar, plus the capture |
+| Accuracy | Compares to the literal snapshot; nothing the run does can move the baseline | Baseline already includes whatever ran before the capture |
+
+**Pick: `openemr_snap`.** Two column kinds are ignored because page views change them on their own: `uuid` (lazy backfill) and `ON UPDATE CURRENT_TIMESTAMP` columns (bumped by that backfill). A real edit to any other column still shows.
+
+### D10. Tables a booking may touch
+
+- **Must change:** `openemr_postcalendar_events` +1 (right patient, provider, type, date, time, duration, not repeating), and `patient_tracker` / `patient_tracker_element` +1 each, pointing at that appointment.
+- **May gain rows, never lose or change them:** the 10 tables a read-only S1 run also writes (audit log, session/login tracking, uuid and contact backfill, UI settings, recent patients, reminder log). The list comes from diffing an S1 run, so it is session noise, not booking behaviour. `sequences` (ID counter) may change in place.
+- **Everything else must be identical.** Cost: if OpenEMR starts writing a new noise table, the oracle fails closed and the list needs a reviewed addition.
+
+## Session A notes (minor)
+- **S2 returns what the form holds just before Save, read back from the fields**, not its arguments. The oracle also checks the return value against the request, so a script that fills the wrong field can't pass by echoing its inputs.
+- **The patient comes from the open chart** (the "+" dialog prefills it). The script checks the prefilled name is exactly `Last, First` and raises otherwise.
+- **`@writes_data` marks the save step**, and `step_start` logs `"writes_data": true`. The step behaves the same; the policy reads the mark later.
+- **S2 reuses `search_patient` / `open_chart` from `scripts/read_a1c.py`** rather than moving them to `common.py`. That's the smallest diff, and it leaves S1, which already passed its baseline, unchanged.
+- **Fixed future weekday dates in the baseline.** The OpenEMR container runs on UTC, so "today" there is a day ahead of Toronto in the evening; fixed dates avoid that.

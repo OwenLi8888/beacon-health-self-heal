@@ -38,6 +38,11 @@ snapshot:
 	  --single-transaction --routines --triggers --add-drop-database --databases openemr' \
 	  | gzip > $(SNAP).tmp
 	mv $(SNAP).tmp $(SNAP)
+	# Clean copy for the oracle's DB diff. `reset` never touches it. Dumped without --databases,
+	# so the dump names no schema and loads into openemr_snap as is.
+	docker compose exec -T mysql bash -c 'export MYSQL_PWD="$$MYSQL_ROOT_PASSWORD"; set -eo pipefail; \
+	  mariadb -uroot -e "DROP DATABASE IF EXISTS openemr_snap; CREATE DATABASE openemr_snap"; \
+	  mariadb-dump -uroot --single-transaction openemr | mariadb -uroot openemr_snap'
 	$(VOL_STAMP) > $(STAMP)
 	echo "Snapshot written: $(SNAP)"
 
@@ -55,7 +60,8 @@ reset:
 	env/check_seed.sh
 
 baseline:
-	uv run python -m harness.baseline --runs 20
+	uv run python -m harness.baseline --script read_a1c --runs 20
+	uv run python -m harness.baseline --script book_appointment --runs 20
 
 down:
 	docker compose down

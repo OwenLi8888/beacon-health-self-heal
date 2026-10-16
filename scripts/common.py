@@ -24,11 +24,18 @@ def _log(event: str, name: str, **extra) -> None:
           file=sys.stderr, flush=True)
 
 
+def writes_data(fn):
+    """Mark a step that changes EHR data. Apply under @step. The heal policy reads the mark;
+    the step itself behaves the same."""
+    fn.writes_data = True
+    return fn
+
+
 def step(fn):
     """Log step_start / step_end around a named step so a failure points at the step."""
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        _log("step_start", fn.__name__)
+        _log("step_start", fn.__name__, **({"writes_data": True} if getattr(fn, "writes_data", False) else {}))
         try:
             result = fn(*args, **kwargs)
         except Exception as e:

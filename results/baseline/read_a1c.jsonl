@@ -1,20 +1,20 @@
-{"run": 1, "patient": "Rosa Delgado", "seconds": 2.6, "passed": true, "value": "6.9", "date": "2026-04-08", "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
-{"run": 2, "patient": "Marcus Bell", "seconds": 2.6, "passed": true, "value": "8.2", "date": "2026-06-15", "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
-{"run": 3, "patient": "Priya Raman", "seconds": 2.6, "passed": true, "value": "6.1", "date": "2026-09-01", "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
-{"run": 4, "patient": "Elena Delgado", "seconds": 2.7, "passed": true, "value": "5.4", "date": "2026-02-11", "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
-{"run": 5, "patient": "Rosa Delgado", "seconds": 2.6, "passed": true, "value": "6.9", "date": "2026-04-08", "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
-{"run": 6, "patient": "Marcus Bell", "seconds": 2.5, "passed": true, "value": "8.2", "date": "2026-06-15", "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
-{"run": 7, "patient": "Priya Raman", "seconds": 2.7, "passed": true, "value": "6.1", "date": "2026-09-01", "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
-{"run": 8, "patient": "Elena Delgado", "seconds": 2.6, "passed": true, "value": "5.4", "date": "2026-02-11", "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
-{"run": 9, "patient": "Rosa Delgado", "seconds": 2.6, "passed": true, "value": "6.9", "date": "2026-04-08", "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
-{"run": 10, "patient": "Marcus Bell", "seconds": 2.5, "passed": true, "value": "8.2", "date": "2026-06-15", "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
-{"run": 11, "patient": "Priya Raman", "seconds": 2.6, "passed": true, "value": "6.1", "date": "2026-09-01", "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
-{"run": 12, "patient": "Elena Delgado", "seconds": 2.5, "passed": true, "value": "5.4", "date": "2026-02-11", "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
-{"run": 13, "patient": "Rosa Delgado", "seconds": 2.6, "passed": true, "value": "6.9", "date": "2026-04-08", "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
-{"run": 14, "patient": "Marcus Bell", "seconds": 2.5, "passed": true, "value": "8.2", "date": "2026-06-15", "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
-{"run": 15, "patient": "Priya Raman", "seconds": 2.5, "passed": true, "value": "6.1", "date": "2026-09-01", "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
-{"run": 16, "patient": "Elena Delgado", "seconds": 2.5, "passed": true, "value": "5.4", "date": "2026-02-11", "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
-{"run": 17, "patient": "Rosa Delgado", "seconds": 2.6, "passed": true, "value": "6.9", "date": "2026-04-08", "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
-{"run": 18, "patient": "Marcus Bell", "seconds": 2.6, "passed": true, "value": "8.2", "date": "2026-06-15", "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
-{"run": 19, "patient": "Priya Raman", "seconds": 2.6, "passed": true, "value": "6.1", "date": "2026-09-01", "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
-{"run": 20, "patient": "Elena Delgado", "seconds": 2.6, "passed": true, "value": "5.4", "date": "2026-02-11", "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
+{"run": 1, "patient": "Rosa Delgado", "seconds": 3.0, "passed": true, "output": {"first": "Rosa", "last": "Delgado", "value": "6.9", "date": "2026-04-08"}, "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
+{"run": 2, "patient": "Marcus Bell", "seconds": 2.8, "passed": true, "output": {"first": "Marcus", "last": "Bell", "value": "8.2", "date": "2026-06-15"}, "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
+{"run": 3, "patient": "Priya Raman", "seconds": 2.8, "passed": true, "output": {"first": "Priya", "last": "Raman", "value": "6.1", "date": "2026-09-01"}, "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
+{"run": 4, "patient": "Elena Delgado", "seconds": 2.9, "passed": true, "output": {"first": "Elena", "last": "Delgado", "value": "5.4", "date": "2026-02-11"}, "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
+{"run": 5, "patient": "Rosa Delgado", "seconds": 2.7, "passed": true, "output": {"first": "Rosa", "last": "Delgado", "value": "6.9", "date": "2026-04-08"}, "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
+{"run": 6, "patient": "Marcus Bell", "seconds": 2.7, "passed": true, "output": {"first": "Marcus", "last": "Bell", "value": "8.2", "date": "2026-06-15"}, "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
+{"run": 7, "patient": "Priya Raman", "seconds": 2.7, "passed": true, "output": {"first": "Priya", "last": "Raman", "value": "6.1", "date": "2026-09-01"}, "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
+{"run": 8, "patient": "Elena Delgado", "seconds": 2.6, "passed": true, "output": {"first": "Elena", "last": "Delgado", "value": "5.4", "date": "2026-02-11"}, "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
+{"run": 9, "patient": "Rosa Delgado", "seconds": 2.6, "passed": true, "output": {"first": "Rosa", "last": "Delgado", "value": "6.9", "date": "2026-04-08"}, "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
+{"run": 10, "patient": "Marcus Bell", "seconds": 2.7, "passed": true, "output": {"first": "Marcus", "last": "Bell", "value": "8.2", "date": "2026-06-15"}, "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
+{"run": 11, "patient": "Priya Raman", "seconds": 2.8, "passed": true, "output": {"first": "Priya", "last": "Raman", "value": "6.1", "date": "2026-09-01"}, "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
+{"run": 12, "patient": "Elena Delgado", "seconds": 2.7, "passed": true, "output": {"first": "Elena", "last": "Delgado", "value": "5.4", "date": "2026-02-11"}, "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
+{"run": 13, "patient": "Rosa Delgado", "seconds": 2.7, "passed": true, "output": {"first": "Rosa", "last": "Delgado", "value": "6.9", "date": "2026-04-08"}, "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
+{"run": 14, "patient": "Marcus Bell", "seconds": 3.4, "passed": true, "output": {"first": "Marcus", "last": "Bell", "value": "8.2", "date": "2026-06-15"}, "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
+{"run": 15, "patient": "Priya Raman", "seconds": 3.0, "passed": true, "output": {"first": "Priya", "last": "Raman", "value": "6.1", "date": "2026-09-01"}, "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
+{"run": 16, "patient": "Elena Delgado", "seconds": 2.9, "passed": true, "output": {"first": "Elena", "last": "Delgado", "value": "5.4", "date": "2026-02-11"}, "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}
+{"run": 17, "patient": "Rosa Delgado", "seconds": 2.9, "passed": true, "output": {"first": "Rosa", "last": "Delgado", "value": "6.9", "date": "2026-04-08"}, "oracle": "expected 6.9 on 2026-04-08, got 6.9 on 2026-04-08"}
+{"run": 18, "patient": "Marcus Bell", "seconds": 2.6, "passed": true, "output": {"first": "Marcus", "last": "Bell", "value": "8.2", "date": "2026-06-15"}, "oracle": "expected 8.2 on 2026-06-15, got 8.2 on 2026-06-15"}
+{"run": 19, "patient": "Priya Raman", "seconds": 2.8, "passed": true, "output": {"first": "Priya", "last": "Raman", "value": "6.1", "date": "2026-09-01"}, "oracle": "expected 6.1 on 2026-09-01, got 6.1 on 2026-09-01"}
+{"run": 20, "patient": "Elena Delgado", "seconds": 2.6, "passed": true, "output": {"first": "Elena", "last": "Delgado", "value": "5.4", "date": "2026-02-11"}, "oracle": "expected 5.4 on 2026-02-11, got 5.4 on 2026-02-11"}

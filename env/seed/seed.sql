@@ -63,3 +63,21 @@ DROP PROCEDURE seed_lab;
 -- Show the chart's Labs card expanded by default (user 0 = default for all users).
 -- With no row OpenEMR renders it collapsed, and its links are hidden.
 INSERT INTO user_settings (setting_user, setting_label, setting_value) VALUES (0, 'labdata_ps_expand', '1');
+
+-- Second provider, so S2's provider choice matters. Calendar/provider lists need authorized,
+-- active, calendar and a username; same facility as admin. No login (no users_secure row).
+INSERT INTO users (id, username, fname, lname, title, specialty, authorized, active, calendar, see_auth, cal_ui, facility_id, facility)
+  SELECT 5, 'nokoro', 'Nadia', 'Okoro', 'Dr.', 'Family Medicine', 1, 1, 1, 1, 3, facility_id, facility FROM users WHERE username = 'admin';
+
+-- Office hours for both providers: In Office (cat 2) at 08:00, Out Of Office (cat 3) at 17:00,
+-- repeating every workday. Without them every booking asks "Provider not available, use it anyway?".
+SET @workdays = 'a:6:{s:17:"event_repeat_freq";s:1:"1";s:22:"event_repeat_freq_type";s:1:"4";s:19:"event_repeat_on_num";s:1:"1";s:19:"event_repeat_on_day";s:1:"0";s:20:"event_repeat_on_freq";s:1:"0";s:6:"exdate";s:0:"";}';
+SET @noloc = 'a:6:{s:14:"event_location";s:0:"";s:13:"event_street1";s:0:"";s:13:"event_street2";s:0:"";s:10:"event_city";s:0:"";s:11:"event_state";s:0:"";s:12:"event_postal";s:0:"";}';
+INSERT INTO openemr_postcalendar_events (pc_catid, pc_multiple, pc_aid, pc_pid, pc_title, pc_time, pc_informant, pc_eventDate, pc_endDate,
+    pc_duration, pc_recurrtype, pc_recurrspec, pc_startTime, pc_endTime, pc_alldayevent, pc_location, pc_eventstatus,
+    pc_sharing, pc_apptstatus, pc_facility, pc_billing_location, pc_hometext)
+  SELECT c.catid, 0, u.id, '', c.title, '2026-01-05 09:00:00', 1, '2026-01-05', '2027-12-31',
+         0, 1, @workdays, c.t, c.t, 0, @noloc, 1, 1, '-', 3, 3, ''
+  FROM (SELECT 1 AS id UNION SELECT 5) u
+  CROSS JOIN (SELECT 2 AS catid, 'In Office' AS title, '08:00:00' AS t
+              UNION SELECT 3, 'Out Of Office', '17:00:00') c;
