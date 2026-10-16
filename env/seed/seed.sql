@@ -59,3 +59,7 @@ CALL seed_lab(5, '2026-05-20 08:00:00', '2345-7', 'Glucose',        @glu, '101',
 -- BH006 to BH010: no labs.
 
 DROP PROCEDURE seed_lab;
+
+-- Show the chart's Labs card expanded by default (user 0 = default for all users).
+-- With no row OpenEMR renders it collapsed, and its links are hidden.
+INSERT INTO user_settings (setting_user, setting_label, setting_value) VALUES (0, 'labdata_ps_expand', '1');

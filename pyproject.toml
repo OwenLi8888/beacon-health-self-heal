@@ -1,0 +1,17 @@
+[project]
+name = "beacon-self-heal"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "playwright==1.64.0",
+    "pymysql>=1.2.3",
+    "python-dotenv>=1.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

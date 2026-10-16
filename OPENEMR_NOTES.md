@@ -15,3 +15,11 @@
 - Dashboard Labs card (`labdata_fragment.php`, loaded by AJAX with `csrf_token_form`) shows only the most recent procedure name and date, no value.
 - Values: "Click here to view and graph all labdata" opens `labdata.php`; tick a code (`value_code[]=4548-4`), mode `list` shows result, range, units, date, newest first.
 - `uuid` columns are NULL on fresh install and backfilled lazily (`UuidRegistry::createMissingUuids...`). Step 4: the S2 DB diff should ignore `uuid` columns.
+- The chart Labs card starts collapsed unless `user_settings.labdata_ps_expand` = 1 (seeded for user 0). For a patient with no labs it says "No lab data documented." and has no link.
+- `labdata.php`: the item checkboxes and List/Matrix radios have no labels. Results table header: Name | Result | Range | Units | Date | Review | Enc. Cells are padded with `&nbsp;`; abnormal results read like "+ 6.9"; Date is `YYYY-MM-DD HH:MM:SS`.
+
+## UI frames and navigation (S1)
+- Each top tab is an iframe whose `name` is set by knockout after load: `fin` (Patient Finder), `pat` (chart), `enc`, `cal`, `msg`. Playwright's `frame.name` reports `''`; `frame_locator("iframe[name='pat']")` works.
+- Search: top-bar textbox "Search by any demographics" + Enter loads `dynamic_finder.php?search_any=<term>` in `fin`. Rows are links named `Last, First`; status reads "Showing 1 to N of N entries".
+- Opening a row loads `demographics.php` in `pat`; the top bar heading becomes `First Last (PUBPID)`.
+- After a fresh install a "Product Registration" modal covers the UI for admins; `OPENEMR_DISABLE_TELEMETRY=1` hides it.

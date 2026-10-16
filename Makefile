@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 .ONESHELL:
-.PHONY: setup reset snapshot down logs
+.PHONY: setup reset snapshot baseline down logs
 
 SNAP_DIR := env/snapshot
 SNAP := $(SNAP_DIR)/openemr.sql.gz
@@ -14,6 +14,8 @@ VOL_STAMP = docker volume inspect -f '{{.CreatedAt}}' "$${COMPOSE_PROJECT_NAME}_
 setup:
 	if [ ! -f .env ]; then cp .env.example .env; echo "Created .env from .env.example"; fi
 	$(LOAD_ENV)
+	uv sync --locked
+	uv run playwright install chromium
 	# Only a volume created by this run is known-clean, so only then is a snapshot taken.
 	fresh=0; docker volume inspect "$${COMPOSE_PROJECT_NAME}_dbdata" >/dev/null 2>&1 || fresh=1
 	docker compose up -d --wait --wait-timeout 900
@@ -51,6 +53,9 @@ reset:
 	echo "DB restored from $(SNAP)"
 	env/check_login.sh
 	env/check_seed.sh
+
+baseline:
+	uv run python -m harness.baseline --runs 20
 
 down:
 	docker compose down

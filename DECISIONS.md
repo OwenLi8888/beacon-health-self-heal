@@ -74,3 +74,21 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
 - **`make setup` snapshots only a DB volume it just created**, and refuses if an existing volume has no matching snapshot. Otherwise deleting `env/snapshot/` would silently turn a used DB into the "clean" baseline. Cost: recovering means `docker compose down -v` (about 1.5 min) or an explicit `make snapshot`.
 - **DB dumps run inside the database container**, so nothing extra is installed in WSL and no password appears on a host command line.
 - **WSL2 over Windows; Python over TypeScript; Claude Code for build steps, Cursor for small edits.**
+
+## Step 3: S1 script and oracle
+
+### D7. Oracle DB access: PyMySQL over a localhost port vs `docker exec mariadb`
+
+| | PyMySQL on `127.0.0.1:${DB_HOST_PORT}` | `docker exec` + parse CLI output |
+|---|---|---|
+| Cost | One pinned dependency; DB port open on localhost only | None |
+| Time | Same | Same |
+| Accuracy | Typed rows (`datetime`, exact strings) | Tab-separated text to re-parse; NULL vs empty is easy to get wrong |
+
+**Pick: PyMySQL.** The oracle is the judge, so it shouldn't depend on parsing text. Step 4's DB diff reuses the same connection.
+
+## Step 3 notes (minor)
+- **Product-registration modal disabled with `OPENEMR_DISABLE_TELEMETRY=1`** in compose. It blocked the UI after every reset; scripting a dismiss click would be noise unrelated to any failure we inject.
+- **Labs card expanded by default via `user_settings` in the seed.** With no row OpenEMR renders it collapsed and its link is hidden. Having the script toggle it would flip a saved preference and depend on prior state.
+- **Patient row picked by exact `Last, First` link name**, raising on 0 or more than 1. Searching "Delgado" returns Rosa and Elena; "first row" would read the wrong patient.
+- **Baseline rotates the 4 A1c patients and runs the script as a subprocess** after a reset each run. Rotation covers latest-isn't-max, newest-inserted-first and shared last names; a subprocess matches how the harness will run scripts.

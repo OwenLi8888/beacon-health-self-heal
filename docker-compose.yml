@@ -5,6 +5,8 @@ services:
   mysql:
     image: mariadb:12.3.3@sha256:2bdff1534a7e569fecaf4b10b66ad0d410806e382d9db29ba305448addda97c4
     command: ["mariadbd", "--character-set-server=utf8mb4"]
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:?set DB_HOST_PORT in .env}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
     volumes:
@@ -28,6 +30,8 @@ services:
       MYSQL_PASS: ${MYSQL_PASS:?set MYSQL_PASS in .env}
       OE_USER: ${OE_USER:?set OE_USER in .env}
       OE_PASS: ${OE_PASS:?set OE_PASS in .env}
+      # Hides the product-registration modal that blocks the UI after every reset.
+      OPENEMR_DISABLE_TELEMETRY: "1"
     volumes:
       - sites:/var/www/localhost/htdocs/openemr/sites
       - logs:/var/log
