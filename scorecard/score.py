@@ -105,8 +105,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--batch", required=True, nargs="+", help="one or more batch ids, e.g. a dev and a holdout batch")
     ap.add_argument("--out", type=Path, help="default: results/<batch>/scorecard.md")
+    ap.add_argument("--log", type=Path, default=ATTEMPTS, help="attempt log; results/final/attempts.jsonl is the committed copy")
     a = ap.parse_args()
-    rows = [json.loads(l) for l in ATTEMPTS.read_text().splitlines() if l.strip()]
+    rows = [json.loads(l) for l in a.log.read_text().splitlines() if l.strip()]
     rows = [r for r in rows if r.get("batch_id") in a.batch]
     if not rows:
         raise SystemExit(f"no attempts logged for batch {a.batch}")

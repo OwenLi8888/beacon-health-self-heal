@@ -78,8 +78,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--variant", required=True)
     ap.add_argument("--case", type=int, default=0, help="index into the script's test cases")
+    # scratch = your own experiments; batch and scorecard only count dev and holdout
+    ap.add_argument("--split", choices=["dev", "scratch"], default="dev")
     a = ap.parse_args()
-    for rec in heal_case(a.variant, a.case):
+    for rec in heal_case(a.variant, a.case, split=a.split):
         print(json.dumps({k: v for k, v in rec.items() if k != "calls"}))
 
 
