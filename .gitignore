@@ -6,5 +6,5 @@ __pycache__/
 env/snapshot/
 .playwright-mcp/
 docs/PLAYBOOK.md
-DECISIONS.md
+docs/BEACON_HIRING_CONTEXT.md
 docs/DEMO.md
