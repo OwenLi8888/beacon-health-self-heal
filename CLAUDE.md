@@ -1,6 +1,6 @@
 # Beacon self-healing Playwright scripts (take-home)
 
-Read docs/BEACON_BRD_PRD.md (the spec) and docs/BEACON_HIRING_CONTEXT.md (why) before any work.
+Read docs/BEACON_BRD_PRD.md (the spec) before any work.
 Environment: WSL2 Ubuntu 26.04, Docker Desktop, Python via uv. Work only inside this repo.
 
 ## Rules

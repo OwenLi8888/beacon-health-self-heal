@@ -1,4 +1,5 @@
 agent_version: v1
-commit: 94f0cabaae2d66716639f605c72090fc462ac768
+commit: 418d81988b7ca46932e309c777b73341871d6eae
 frozen: 2026-10-16T14:58:58-04:00
 The agent (agent/, policy.py) does not change after this commit.
+note: history rewritten 2026-10-19 to drop private notes; was 94f0cab. agent/, policy.py, scripts/, oracle/ trees unchanged.

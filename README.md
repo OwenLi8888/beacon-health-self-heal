@@ -4,7 +4,7 @@ When a Playwright script that drives an EHR breaks, an agent diagnoses the failu
 
 The environment is OpenEMR in Docker with synthetic patients. The script under test is S1, which reads a patient's latest Hemoglobin A1c. The failures are injected at the browser level, so the OpenEMR source is never edited.
 
-## Results (agent v1, claude-sonnet-5-5, frozen at `94f0cab`)
+## Results (agent v1, claude-sonnet-5-5, frozen at `418d819`)
 
 | Metric | Dev (4 variants × 3) | Holdout (1 variant × 3) |
 |---|---|---|
