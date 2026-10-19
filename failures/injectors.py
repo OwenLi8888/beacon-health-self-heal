@@ -24,6 +24,33 @@ SET_ATTRIBUTE_JS = """(() => {
   new MutationObserver(fix).observe(document, {childList: true, subtree: true});
 })();"""
 
+# Detaches the table's data rows (2+ cells) as the parser inserts them, shows a one-cell loading row,
+# and puts the rows back delay_ms after the first one was held: the header is there, the data isn't yet.
+DELAY_ROWS_JS = """(() => {
+  const cfg = %s;
+  if (!location.pathname.includes(cfg.url)) return;
+  const held = [];
+  let loading = null, timer = null;
+  const hold = () => {
+    for (const row of document.querySelectorAll(cfg.selector + ' tr')) {
+      if (row === loading || row.querySelectorAll(':scope > td').length < 2) continue;
+      if (!loading) {
+        loading = document.createElement('tr');
+        loading.innerHTML = `<td colspan="${row.children.length}" class="text-center">${cfg.placeholder}</td>`;
+        row.before(loading);
+      }
+      held.push(row);
+      row.remove();
+      window.__h();
+    }
+    if (held.length && !timer) {
+      timer = setTimeout(() => { obs.disconnect(); loading.after(...held); loading.remove(); }, cfg.delay_ms);
+    }
+  };
+  const obs = new MutationObserver(hold);
+  obs.observe(document, {childList: true, subtree: true});
+})();"""
+
 
 def load_catalog() -> dict[str, dict]:
     variants = yaml.safe_load(CATALOG.read_text())["variants"]
@@ -68,6 +95,15 @@ def apply(context: BrowserContext, variant_id: str) -> Applied:
 
         context.expose_function("__h", hit)
         context.add_init_script(SET_ATTRIBUTE_JS % json.dumps(inj))
+    elif inj["kind"] == "delay_rows":
+        key = f"{inj['selector']} rows"
+        applied.hits = {key: 0}
+
+        def hit() -> None:
+            applied.hits[key] += 1
+
+        context.expose_function("__h", hit)
+        context.add_init_script(DELAY_ROWS_JS % json.dumps(inj))
     elif inj["kind"] == "status":
         applied.hits = {"<any request>": 0}
 

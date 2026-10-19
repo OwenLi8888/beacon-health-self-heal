@@ -6,6 +6,9 @@
 #   set_attribute - add_init_script: on pages whose path contains `url`, change `attribute` of
 #              elements matching `selector` from `old` to `new`. Must hit at least once per run.
 #   status   - answer every request whose URL contains `url` with `status` and `body`.
+#   delay_rows - add_init_script: on pages whose path contains `url`, hold back the data rows (2+ cells)
+#              of tables matching `selector` behind a one-cell `placeholder` row for `delay_ms`.
+#              Must hold at least one row per run.
 # breaks_step: the S1 step the variant is meant to break; verification checks the run failed there.
 
 variants:
@@ -85,3 +88,33 @@ variants:
       url: /
       status: 502
       body: "<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center><hr><center>nginx</center></body></html>"
+
+  - id: tm_01
+    type: timing
+    description: Lab results table renders its header with a loading row; the data rows arrive 4 s later.
+    script: read_a1c
+    breaks_step: read_latest_a1c
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: delay_rows
+      url: /interface/patient_file/summary/labdata.php
+      selector: table.border.table
+      placeholder: Loading results…
+      delay_ms: 4000
+
+  - id: tm_02
+    type: timing
+    description: Same as tm_01 with a 6 s delay.
+    script: read_a1c
+    breaks_step: read_latest_a1c
+    truth_cause: script
+    expected_decision: auto_apply
+    split: holdout
+    injector:
+      kind: delay_rows
+      url: /interface/patient_file/summary/labdata.php
+      selector: table.border.table
+      placeholder: Loading results…
+      delay_ms: 6000

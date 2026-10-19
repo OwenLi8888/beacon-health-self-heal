@@ -3,7 +3,7 @@
 On failure, runs/<run_id>/ holds the bundle the heal agent may read (error.json, screenshot.png,
 dom.html, dom_full.html). Ground truth (variant, labels, oracle detail) goes only to
 logs/runs.jsonl, which the agent may not read, so a bundle never says what was injected.
-Usage: uv run python -m harness.run --script read_a1c [--variant sc_01]
+Usage: uv run python -m harness.run --script read_a1c [--variant sc_01] [--patch demo/patches/x.diff]
 """
 import argparse
 import json
@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from agent import patch as patching
 from failures.injectors import load_catalog
 from harness.baseline import S1_CASES, run_s1
 
@@ -90,6 +91,7 @@ def run(script: str, variant: str | None = None, case: tuple | None = None, rese
             "failure_type": truth.get("type"), "truth_cause": truth.get("truth_cause"),
             "expected_decision": truth.get("expected_decision"), "split": truth.get("split"),
             "script_output": child.get("output"), "oracle": oracle,
+            "script_path": str(script_path) if script_path else None,  # set for sandbox reruns and --patch
         }, default=str) + "\n")
     return result
 
@@ -98,8 +100,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--script", choices=SCRIPTS, required=True)
     ap.add_argument("--variant")
+    ap.add_argument("--patch", type=Path, help="hand-written diff, run on a copy of the script (demos the lazy fixes)")
     a = ap.parse_args()
-    r = run(a.script, a.variant)
+    script_path = None
+    if a.patch:
+        script_path = RUNS / "patched" / a.patch.stem / f"{a.script}.py"
+        script_path.parent.mkdir(parents=True, exist_ok=True)
+        script_path.write_text(patching.apply((Path("scripts") / f"{a.script}.py").read_text(), a.patch.read_text()))
+    r = run(a.script, a.variant, script_path=script_path)
     print(json.dumps(asdict(r)))
     sys.exit(0 if r.passed else 1)
 
