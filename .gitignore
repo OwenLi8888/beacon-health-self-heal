@@ -6,3 +6,5 @@ __pycache__/
 env/snapshot/
 .playwright-mcp/
 docs/PLAYBOOK.md
+DECISIONS.md
+docs/DEMO.md

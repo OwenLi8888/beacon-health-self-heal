@@ -15,7 +15,7 @@ The environment is OpenEMR in Docker with synthetic patients. The script under t
 | Tries per heal | 1.00 | 1.00 |
 | Cost per heal | $0.034 | $0.027 |
 
-The full scorecard is in [results/final/scorecard.md](results/final/scorecard.md). The tuning history is in [CHANGELOG.md](CHANGELOG.md), and the design choices are in [DECISIONS.md](DECISIONS.md).
+The full scorecard is in [results/final/scorecard.md](results/final/scorecard.md). The tuning history is in [CHANGELOG.md](CHANGELOG.md).
 
 **What these numbers don't show.** The sample is small, and the variants are easy: three selector changes, each fixed in one or two lines, plus one site that returns 502 on every request. The holdout is a single variant of the same failure type. Read the intervals, not the 100%. See "Limits and next steps" below.
 
@@ -57,7 +57,7 @@ Other commands:
 | `uv run pytest -q tests/test_agent_guard.py tests/test_dom_trim.py` | Offline tests: path guard, patch applier, policy, scorecard. |
 | `make baseline` | 20 clean runs of each script, checked by the oracle (flake baseline). |
 
-To build your own failures and probe the agent, see [docs/TESTING.md](docs/TESTING.md). For a five-minute demo script, see [docs/DEMO.md](docs/DEMO.md).
+To build your own failures and probe the agent, see [docs/TESTING.md](docs/TESTING.md).
 
 ## How it works
 
