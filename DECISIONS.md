@@ -194,3 +194,9 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
   - An `unknown` cause escalates. Only `site` and `infra` count as `reported` (PRD B7).
   - The 8th tool call is reserved for `submit_diagnosis`, even when calls come in parallel.
   - A retry keeps the last bundle that has a DOM.
+
+## Pivot v0.4, step 2: bad-fix rules
+- **The positional-pick rule applies only to multiple-match failures** (`AmbiguousValue` or "strict mode violation"). The alternative was to ban `.first`/`.nth(`/`[0]` everywhere. That would also reject the right timing fix, `rows.first.wait_for()` (30 s default), and force `expect(...)` with an explicit timeout, since its default of 5 s is shorter than tm_02's 6 s delay. Cost: a positional pick added during a timing heal is not caught by this rule. It still has to pass the rerun and the oracle.
+- **A bad fix is checked after the rerun and is not retried.** `decide` returns `rejected_bad_fix`, which is not in `agent.heal.FAILED`, so the heal ends there. Options were to skip the rerun, or to retry with feedback. Running the rerun shows whether the lazy fix would have passed. Not retrying keeps agent code unchanged before the first dev batch (B5: measure first). Cost: one lazy first attempt ends the heal as a miss.
+- **`bad_fix_type` is tagged on every attempt in `harness/heal.py`**, not only on those that reach `decide`. A positional pick that opens the wrong chart fails the rerun and never reaches `decide`, but B6 counts all bad-fix attempts.
+- **The em variants fail with `AmbiguousValue`, not a strict-mode error.** The script counts matches before clicking. Removing that check would weaken a guard. With a plain `.first` patch, the wrong chart fails `open_chart`'s heading check. Only a patch that also loosens that check reaches an oracle MISMATCH.

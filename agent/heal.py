@@ -20,7 +20,7 @@ from agent.guard import safe_read
 from agent.schema import Diagnosis
 from agent.tools import TOOLS, Toolbox
 
-AGENT_VERSION = "v1"
+AGENT_VERSION = "v2"
 MAX_ATTEMPTS = 3
 MAX_TOOL_CALLS = 8
 MAX_MODEL_CALLS = MAX_TOOL_CALLS + 2  # room for nudges when the model answers in text

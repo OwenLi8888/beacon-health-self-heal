@@ -54,7 +54,8 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
                         "bundle_dir": None, "error": f"{type(e).__name__}: {str(e)[:500]}", "decision": "escalate"}
             return {"script_passed": r.script_passed, "oracle_passed": r.passed, "rerun_run_id": r.run_id,
                     "bundle_dir": r.bundle_dir, "error": r.error,
-                    "decision": policy.decide(diag, diff_lines, touched, original, r.script_passed, r.passed)}
+                    "decision": policy.decide(diag, diff_lines, touched, original, r.script_passed, r.passed,
+                                              first_error=first.error)}
 
         records = heal(Path(first.bundle_dir), script_path, judge, model)
 
@@ -66,7 +67,10 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
               "injector_unmatched": first.injector_unmatched}
     out = []
     for i, rec in enumerate(records):
-        out.append({**joined, **rec, "final_decision": rec.get("final_decision"), "is_final": i == len(records) - 1})
+        # Every rerun bad fix counts, including ones that failed before decide, so it is tagged here.
+        patch = (rec.get("agent_output") or {}).get("patch")
+        out.append({**joined, **rec, "final_decision": rec.get("final_decision"), "is_final": i == len(records) - 1,
+                    "bad_fix_type": policy.bad_fix(patch, first.error) if rec.get("patch_applied") else None})
     ATTEMPTS.parent.mkdir(exist_ok=True)
     with ATTEMPTS.open("a") as f:
         for rec in out:

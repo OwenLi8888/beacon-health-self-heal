@@ -2,6 +2,12 @@
 
 Agent versions and their numbers. The agent is the prompt (`agent/prompt.md`), the tools (`agent/tools.py`) and the policy (`policy.py`).
 
+## v2 (19 Oct 2026), in progress on `feature/failure-mix`
+
+Pivot v0.4 (timing and element matching):
+- Policy: a fixed sleep (`sleep(`, `wait_for_timeout(`) is `rejected_bad_fix`. A positional pick (`.first`, `.last`, `.nth(`, `[n]`) is also `rejected_bad_fix` when the failure was a multiple match.
+- Prompt: two sentences. Timing → wait for the specific element or data. Multiple match → tell them apart by stable data, never by position.
+
 ## v1 (16 Oct 2026), frozen
 
 The first version: the tools, the F6 schema, 3 attempts × 8 tool calls, and the policy (cause = script, confidence ≥ 0.8, diff ≤ 10 lines, rerun and oracle pass).
