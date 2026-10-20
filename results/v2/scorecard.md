@@ -2,11 +2,14 @@
 
 Agent v3, model claude-sonnet-5-5. Generated from logs/attempts.jsonl only.
 
+Notes: \* "Correct fix proposed" was added on 20 Oct 2026, after the v2 holdout had run. It is reporting only, computed from the same logged attempts, and changes no decision or other metric.
+
 ## Dev vs holdout
 
 | Metric | Dev | Holdout |
 |---|---|---|
 | Heal rate (auto-applied, oracle pass / heal-able) | 100% (6 of 6; 95% CI 61% to 100%) | 17% (1 of 6; 95% CI 3% to 56%) |
+| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | 100% (6 of 6; 95% CI 61% to 100%) | 50% (3 of 6; 95% CI 19% to 81%) |
 | **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | 0% (0 of 6; 95% CI 0% to 39%) | 0% (0 of 3; 95% CI 0% to 56%) |
 | Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | 0 | 0 |
 | Non-script patch rate (cases with a patch applied / non-script cases) | n/a (0 of 0) | n/a (0 of 0) |
@@ -23,6 +26,7 @@ Agent v3, model claude-sonnet-5-5. Generated from logs/attempts.jsonl only.
 | Metric | tm dev | tm holdout | em dev | em holdout |
 |---|---|---|---|---|
 | Heal rate (auto-applied, oracle pass / cases) | 100% (3 of 3; 95% CI 44% to 100%) | 0% (0 of 3; 95% CI 0% to 56%) | 100% (3 of 3; 95% CI 44% to 100%) | 33% (1 of 3; 95% CI 6% to 79%) |
+| Correct fix proposed* (patch passed rerun + oracle, any final decision / cases) | 100% (3 of 3; 95% CI 44% to 100%) | 0% (0 of 3; 95% CI 0% to 56%) | 100% (3 of 3; 95% CI 44% to 100%) | 100% (3 of 3; 95% CI 44% to 100%) |
 | Final decision = expected / cases | 100% (3 of 3; 95% CI 44% to 100%) | 0% (0 of 3; 95% CI 0% to 56%) | 100% (3 of 3; 95% CI 44% to 100%) | 33% (1 of 3; 95% CI 6% to 79%) |
 | Cause correct (script / cases) | 100% (3 of 3; 95% CI 44% to 100%) | 0% (0 of 3; 95% CI 0% to 56%) | 100% (3 of 3; 95% CI 44% to 100%) | 100% (3 of 3; 95% CI 44% to 100%) |
 | cause_detail chosen (expected: timing / element_match from agent v3) | slow_page 3 | other 3 | other 3 | other 3 |
@@ -45,6 +49,7 @@ Cases: 6 failures healed or handled, 0 where the injected run did not fail, 0 wi
 | Metric | Value |
 |---|---|
 | Heal rate (auto-applied, oracle pass / heal-able) | 100% (6 of 6; 95% CI 61% to 100%) |
+| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | 100% (6 of 6; 95% CI 61% to 100%) |
 | **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | 0% (0 of 6; 95% CI 0% to 39%) |
 | Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | 0 |
 | Non-script patch rate (cases with a patch applied / non-script cases) | n/a (0 of 0) |
@@ -76,6 +81,7 @@ Cases: 6 failures healed or handled, 0 where the injected run did not fail, 0 wi
 | Metric | Value |
 |---|---|
 | Heal rate (auto-applied, oracle pass / heal-able) | 17% (1 of 6; 95% CI 3% to 56%) |
+| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | 50% (3 of 6; 95% CI 19% to 81%) |
 | **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | 0% (0 of 3; 95% CI 0% to 56%) |
 | Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | 0 |
 | Non-script patch rate (cases with a patch applied / non-script cases) | n/a (0 of 0) |
@@ -109,6 +115,7 @@ Cases: 12 failures healed or handled, 0 where the injected run did not fail, 0 w
 | Metric | Value |
 |---|---|
 | Heal rate (auto-applied, oracle pass / heal-able) | 100% (9 of 9; 95% CI 70% to 100%) |
+| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | 100% (9 of 9; 95% CI 70% to 100%) |
 | **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | 0% (0 of 9; 95% CI 0% to 30%) |
 | Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | 0 |
 | Non-script patch rate (cases with a patch applied / non-script cases) | 0% (0 of 3; 95% CI 0% to 56%) |
@@ -143,6 +150,7 @@ Cases: 3 failures healed or handled, 0 where the injected run did not fail, 0 wi
 | Metric | Value |
 |---|---|
 | Heal rate (auto-applied, oracle pass / heal-able) | 100% (3 of 3; 95% CI 44% to 100%) |
+| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | 100% (3 of 3; 95% CI 44% to 100%) |
 | **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | 0% (0 of 3; 95% CI 0% to 56%) |
 | Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | 0 |
 | Non-script patch rate (cases with a patch applied / non-script cases) | n/a (0 of 0) |

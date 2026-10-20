@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 .ONESHELL:
-.PHONY: setup reset snapshot baseline batch score down logs
+.PHONY: setup reset snapshot baseline batch score reproduce down logs
 
 SNAP_DIR := env/snapshot
 SNAP := $(SNAP_DIR)/openemr.sql.gz
@@ -69,6 +69,20 @@ batch:
 
 score:
 	uv run python -m scorecard.score --batch $(BATCH)
+
+# Regenerate results/v2/scorecard.md from the committed attempt logs and diff it against the committed
+# copy. No Docker, no API key. v1 is checked the same way, minus the row added after the v2 holdout.
+V2_BATCHES := b20261020-001525-8bae b20261020-003223-e88e
+V1_BATCHES := b20261016-144231-c50d b20261016-145906-5c67
+reproduce:
+	tmp=$$(mktemp -d)
+	cat results/v2/dev_attempts.jsonl results/v2/holdout_attempts.jsonl > $$tmp/v2.jsonl
+	uv run python -m scorecard.score --log $$tmp/v2.jsonl --batch $(V2_BATCHES) \
+	  --v1-log results/final/attempts.jsonl --out $$tmp/v2.md > /dev/null
+	diff $$tmp/v2.md results/v2/scorecard.md
+	uv run python -m scorecard.score --log results/final/attempts.jsonl --batch $(V1_BATCHES) --out $$tmp/v1.md > /dev/null
+	diff <(grep -v -e 'Correct fix proposed' -e '^Notes: ' $$tmp/v1.md | cat -s) <(cat -s results/final/scorecard.md)
+	echo "reproduce: results/v2/scorecard.md and results/final/scorecard.md match the committed logs"
 
 down:
 	docker compose down

@@ -27,6 +27,12 @@ def rate(k: int, n: int) -> str:
     return f"{100 * k / n:.0f}% ({k} of {n}; 95% CI {100 * lo:.0f}% to {100 * hi:.0f}%)"
 
 
+def fix_proposed(attempts: list[dict]) -> bool:
+    """Some attempt's patch was rerun and passed script and oracle, whatever the final decision.
+    Reporting only (added after the v2 holdout); it changes no decision."""
+    return any(r["patch_applied"] and r["script_passed"] and r["oracle_passed"] for r in attempts)
+
+
 def cause_correct(truth: str, out: dict | None) -> bool:
     if not out:
         return False
@@ -62,6 +68,8 @@ def section(split: str, rows: list[dict]) -> list[str]:
            f"{unmatched} with an injector that matched nothing. Attempts: {len(attempts)}.", "",
            "| Metric | Value |", "|---|---|",
            f"| Heal rate (auto-applied, oracle pass / heal-able) | {rate(len(healed), len(healable))} |",
+           f"| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | "
+           f"{rate(sum(fix_proposed(cases[f['heal_id']]) for f in healable), len(healable))} |",
            f"| **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | {rate(len(wrong), len(patched))} |",
            f"| Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | "
            f"{sum(f['final_decision'] == 'auto_apply' and not f['oracle_passed'] for f in finals)} |",
@@ -128,6 +136,8 @@ def flaky_section(rows: list[dict]) -> list[str]:
         atts = [r for f in fs for r in cases[f["heal_id"]]]
         if metric == "heal":
             return rate(len(heals), len(fs))
+        if metric == "proposed":
+            return rate(sum(fix_proposed(cases[f["heal_id"]]) for f in fs), len(fs))
         if metric == "decision":
             return rate(sum(f["final_decision"] == f["expected_decision"] for f in fs), len(fs))
         if metric == "cause":
@@ -142,6 +152,7 @@ def flaky_section(rows: list[dict]) -> list[str]:
         return f"${sum(r['cost_usd'] for r in atts):.4f}"
 
     metrics = [("heal", "Heal rate (auto-applied, oracle pass / cases)"),
+               ("proposed", "Correct fix proposed* (patch passed rerun + oracle, any final decision / cases)"),
                ("decision", "Final decision = expected / cases"),
                ("cause", "Cause correct (script / cases)"),
                ("detail", "cause_detail chosen (expected: timing / element_match from agent v3)"),
@@ -181,7 +192,9 @@ def main() -> None:
     models = sorted({r["model"] for r in rows})
     versions = sorted({r["agent_version"] for r in rows})
     lines = [f"# Scorecard: {', '.join(a.batch)}", "",
-             f"Agent {', '.join(versions)}, model {', '.join(models)}. Generated from logs/attempts.jsonl only.", ""]
+             f"Agent {', '.join(versions)}, model {', '.join(models)}. Generated from logs/attempts.jsonl only.", "",
+             "Notes: \\* \"Correct fix proposed\" was added on 20 Oct 2026, after the v2 holdout had run. It is "
+             "reporting only, computed from the same logged attempts, and changes no decision or other metric.", ""]
     sections = {}
     for split in ("dev", "holdout"):
         split_rows = [r for r in rows if r["split"] == split]
