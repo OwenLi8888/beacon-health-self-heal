@@ -1,6 +1,6 @@
 """S1: read a patient's most recent Hemoglobin A1c (LOINC 4548-4) value and date from the chart.
 
-Usage: uv run python -m scripts.read_a1c --first Rosa --last Delgado
+Usage: uv run python -m scripts.read_a1c --first Rosa --last Delgado --dob 1961-03-14
 """
 import argparse
 import json
@@ -23,7 +23,7 @@ class A1cReading:
 
 
 @step
-def search_patient(page: Page, first: str, last: str) -> None:
+def search_patient(page: Page, first: str, last: str, dob: str) -> None:
     """Search by last name, then open the one finder row named exactly `last, first`."""
     box = page.get_by_placeholder("Search by any demographics")
     box.fill(last)
@@ -97,9 +97,10 @@ def read_latest_a1c(chart: FrameLocator) -> A1cReading:
     return A1cReading(Decimal(value[1]), when.date())
 
 
-def read_a1c(page: Page, first: str, last: str) -> A1cReading:
+def read_a1c(page: Page, first: str, last: str, dob: str) -> A1cReading:
+    datetime.strptime(dob, "%Y-%m-%d")  # the case's date of birth; raises if it isn't YYYY-MM-DD
     login(page)
-    search_patient(page, first, last)
+    search_patient(page, first, last, dob)
     chart = open_chart(page, first, last)
     open_lab_results(chart)
     return read_latest_a1c(chart)
@@ -109,9 +110,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--first", required=True)
     ap.add_argument("--last", required=True)
+    ap.add_argument("--dob", required=True, help="date of birth, YYYY-MM-DD")
     args = ap.parse_args()
     with sync_playwright() as p:
-        reading = read_a1c(p.chromium.launch().new_page(), args.first, args.last)
+        reading = read_a1c(p.chromium.launch().new_page(), args.first, args.last, args.dob)
     print(json.dumps({"first": args.first, "last": args.last, "value": str(reading.value),
                       "date": reading.date.isoformat()}))
 

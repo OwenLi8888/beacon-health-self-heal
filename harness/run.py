@@ -24,8 +24,19 @@ LOG = Path("logs/runs.jsonl")
 
 # script -> (cases, judge builder from harness.baseline, case -> entry kwargs)
 SCRIPTS = {
-    "read_a1c": (S1_CASES, run_s1, lambda c: {"first": c[0], "last": c[1]}),
+    "read_a1c": (S1_CASES, run_s1, lambda c: {"first": c[0], "last": c[1], "dob": c[2]}),
 }
+
+
+def variant_case(script: str, variant: str | None) -> tuple | None:
+    """The case a variant is pinned to by its catalog `patient` ("First Last"), or None if unpinned."""
+    patient = load_catalog()[variant].get("patient") if variant else None
+    if patient is None:
+        return None
+    cases = [c for c in SCRIPTS[script][0] if f"{c[0]} {c[1]}" == patient]
+    if len(cases) != 1:
+        raise ValueError(f"variant {variant}: patient {patient!r} matches {len(cases)} {script} cases")
+    return cases[0]
 
 
 @dataclass
@@ -45,7 +56,7 @@ class RunResult:
 def run(script: str, variant: str | None = None, case: tuple | None = None, reset: bool = True,
         script_path: Path | None = None) -> RunResult:
     cases, build, to_kwargs = SCRIPTS[script]
-    case = case or cases[0]
+    case = case or variant_case(script, variant) or cases[0]
     _, record, judge = build(case)
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-{secrets.token_hex(2)}"
     run_dir = RUNS / run_id

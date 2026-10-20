@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 import policy
 from agent.heal import AGENT_VERSION, heal, model_from_env
 from failures.injectors import load_catalog
-from harness.run import SCRIPTS, run
+from harness.run import SCRIPTS, run, variant_case
 
 ATTEMPTS = Path("logs/attempts.jsonl")
 load_dotenv()  # ANTHROPIC_API_KEY; an inline HEAL_MODEL=... wins over .env
@@ -34,7 +34,7 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
     script = truth["script"]
     script_path = Path("scripts") / f"{script}.py"
     cases = SCRIPTS[script][0]
-    case = cases[case_index % len(cases)]
+    case = variant_case(script, variant) or cases[case_index % len(cases)]
 
     first = run(script, variant, case)
     if first.passed:  # injector didn't break the run; nothing to heal

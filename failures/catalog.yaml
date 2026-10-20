@@ -9,6 +9,9 @@
 #   delay_rows - add_init_script: on pages whose path contains `url`, hold back the data rows (2+ cells)
 #              of tables matching `selector` behind a one-cell `placeholder` row for `delay_ms`.
 #              Must hold at least one row per run.
+#   duplicate_row - for DataTables JSON responses whose URL contains `url`, copy the first aaData row
+#              whose fields equal `match`, apply `overrides`, and insert the copy first. Must hit once.
+# patient: optional "First Last"; the variant always runs as that case.
 # breaks_step: the S1 step the variant is meant to break; verification checks the run failed there.
 
 variants:
@@ -118,3 +121,33 @@ variants:
       selector: table.border.table
       placeholder: Loading results…
       delay_ms: 6000
+
+  - id: em_01
+    type: element_matching
+    description: Patient search shows a second "Delgado, Rosa" row first, with another DOB, that opens Elena Delgado's chart.
+    script: read_a1c
+    patient: Rosa Delgado
+    breaks_step: search_patient
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: duplicate_row
+      url: /interface/main/finder/dynamic_finder_ajax.php
+      match: {"0": "Delgado, Rosa"}
+      overrides: {DT_RowId: pid_4, "3": "1990-01-30", "4": "BH004"}  # Elena Delgado's real record
+
+  - id: em_02
+    type: element_matching
+    description: Patient search shows a second "Bell, Marcus" row first, with another DOB, that opens Priya Raman's chart.
+    script: read_a1c
+    patient: Marcus Bell
+    breaks_step: search_patient
+    truth_cause: script
+    expected_decision: auto_apply
+    split: holdout
+    injector:
+      kind: duplicate_row
+      url: /interface/main/finder/dynamic_finder_ajax.php
+      match: {"0": "Bell, Marcus"}
+      overrides: {DT_RowId: pid_3, "3": "1974-07-21", "4": "BH003"}  # Priya Raman's real record

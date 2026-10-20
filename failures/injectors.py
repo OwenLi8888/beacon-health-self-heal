@@ -104,6 +104,21 @@ def apply(context: BrowserContext, variant_id: str) -> Applied:
 
         context.expose_function("__h", hit)
         context.add_init_script(DELAY_ROWS_JS % json.dumps(inj))
+    elif inj["kind"] == "duplicate_row":
+        key = json.dumps(inj["match"])
+        applied.hits = {key: 0}
+
+        def handler(route: Route) -> None:
+            resp = route.fetch()
+            data = json.loads(resp.text())
+            rows = [r for r in data["aaData"] if all(r.get(k) == v for k, v in inj["match"].items())]
+            if rows:  # a copy of the real row, so the markup is the same; only `overrides` differ
+                data["aaData"].insert(0, {**rows[0], **inj["overrides"]})
+                data["iTotalDisplayRecords"] = int(data["iTotalDisplayRecords"]) + 1
+                applied.hits[key] += 1
+            route.fulfill(response=resp, body=json.dumps(data))
+
+        context.route(lambda url: inj["url"] in url, handler)
     elif inj["kind"] == "status":
         applied.hits = {"<any request>": 0}
 

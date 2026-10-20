@@ -1,0 +1,8 @@
+--- a/read_a1c.py
++++ b/read_a1c.py
+@@ -36,4 +36,2 @@
+         raise ValueNotFound(f"no patient named {first} {last} in search results")
+-    if matches.count() > 1:
+-        raise AmbiguousValue(f"{matches.count()} patients named {first} {last}")
+-    matches.click()
++    matches.first.click()

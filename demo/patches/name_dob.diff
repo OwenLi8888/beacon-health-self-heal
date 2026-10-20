@@ -1,0 +1,6 @@
+--- a/read_a1c.py
++++ b/read_a1c.py
+@@ -33,1 +33,2 @@
+-    matches = finder.get_by_role("link", name=f"{last}, {first}", exact=True)
++    rows = finder.get_by_role("row").filter(has=finder.get_by_role("cell", name=dob, exact=True))
++    matches = rows.get_by_role("link", name=f"{last}, {first}", exact=True)
