@@ -131,7 +131,7 @@ demo/patches/ hand-written fixes, lazy and correct, for harness.run --patch
 results/      final/ (v1: frozen record, attempts, scorecard)
               v2/ (FROZEN.txt, dev + holdout attempts, scorecard.md, round-1 dev_agent_v2_*)
               baseline/, injectors/verify.md, per-batch scorecards
-docs/         BEACON_BRD_PRD.md (spec), PIVOT_FAILURE_MIX.md (v2 spec), TESTING.md, WRITEUP_DRAFT.md
+docs/         BEACON_BRD_PRD.md (spec), TESTING.md
 env/          seed SQL, login and seed checks         runs/, logs/  gitignored run output
 ```
 
