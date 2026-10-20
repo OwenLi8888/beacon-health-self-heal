@@ -6,6 +6,12 @@
 #   set_attribute - add_init_script: on pages whose path contains `url`, change `attribute` of
 #              elements matching `selector` from `old` to `new`. Must hit at least once per run.
 #   status   - answer every request whose URL contains `url` with `status` and `body`.
+#   delay_rows - add_init_script: on pages whose path contains `url`, hold back the data rows (2+ cells)
+#              of tables matching `selector` for `delay_ms`, behind a one-cell `placeholder` row if
+#              one is given (null: no indicator at all). Must hold at least one row per run.
+#   duplicate_row - for DataTables JSON responses whose URL contains `url`, copy the first aaData row
+#              whose fields equal `match`, apply `overrides`, and insert the copy first. Must hit once.
+# patient: optional "First Last"; the variant always runs as that case.
 # breaks_step: the S1 step the variant is meant to break; verification checks the run failed there.
 
 variants:
@@ -85,3 +91,63 @@ variants:
       url: /
       status: 502
       body: "<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center><hr><center>nginx</center></body></html>"
+
+  - id: tm_01
+    type: timing
+    description: Lab results table renders its header with a loading row; the data rows arrive 4 s later.
+    script: read_a1c
+    breaks_step: read_latest_a1c
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: delay_rows
+      url: /interface/patient_file/summary/labdata.php
+      selector: table.border.table
+      placeholder: Loading results…
+      delay_ms: 4000
+
+  - id: tm_02
+    type: timing
+    description: Lab results table renders its header with no rows and no loading indicator; the data rows arrive 6 s later.
+    script: read_a1c
+    breaks_step: read_latest_a1c
+    truth_cause: script
+    expected_decision: auto_apply
+    split: holdout
+    injector:
+      kind: delay_rows
+      url: /interface/patient_file/summary/labdata.php
+      selector: table.border.table
+      placeholder: null  # unlike tm_01: a fix that waits for tm_01's indicator to go away finds nothing to wait for
+      delay_ms: 6000
+
+  - id: em_01
+    type: element_matching
+    description: Patient search shows a second "Delgado, Rosa" row first, with another DOB, that opens Elena Delgado's chart.
+    script: read_a1c
+    patient: Rosa Delgado
+    breaks_step: search_patient
+    truth_cause: script
+    expected_decision: auto_apply
+    split: dev
+    injector:
+      kind: duplicate_row
+      url: /interface/main/finder/dynamic_finder_ajax.php
+      match: {"0": "Delgado, Rosa"}
+      overrides: {DT_RowId: pid_4, "3": "1990-01-30", "4": "BH004"}  # Elena Delgado's real record
+
+  - id: em_02
+    type: element_matching
+    description: Patient search shows a second "Bell, Marcus" row first, with another DOB, that opens Priya Raman's chart.
+    script: read_a1c
+    patient: Marcus Bell
+    breaks_step: search_patient
+    truth_cause: script
+    expected_decision: auto_apply
+    split: holdout
+    injector:
+      kind: duplicate_row
+      url: /interface/main/finder/dynamic_finder_ajax.php
+      match: {"0": "Bell, Marcus"}
+      overrides: {DT_RowId: pid_3, "3": "1974-07-21", "4": "BH003"}  # Priya Raman's real record

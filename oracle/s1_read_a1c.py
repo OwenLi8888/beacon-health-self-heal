@@ -62,4 +62,4 @@ def check(first: str, last: str, value: Decimal, day: date) -> tuple[bool, str]:
     with connect() as conn:
         exp_value, exp_day = expected_latest(a1c_rows(conn, first, last))
     passed = value == exp_value and day == exp_day
-    return passed, f"expected {exp_value} on {exp_day}, got {value} on {day}"
+    return passed, f"Screen: {value} {day} | DB: {exp_value} {exp_day} | {'MATCH' if passed else 'MISMATCH'}"

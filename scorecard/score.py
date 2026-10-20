@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ATTEMPTS = Path("logs/attempts.jsonl")
+DETAIL = {"element_matching": "element_match"}  # catalog failure type -> agent cause_detail, where they differ
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -24,6 +25,12 @@ def rate(k: int, n: int) -> str:
         return "n/a (0 of 0)"
     lo, hi = wilson(k, n)
     return f"{100 * k / n:.0f}% ({k} of {n}; 95% CI {100 * lo:.0f}% to {100 * hi:.0f}%)"
+
+
+def fix_proposed(attempts: list[dict]) -> bool:
+    """Some attempt's patch was rerun and passed script and oracle, whatever the final decision.
+    Reporting only (added after the v2 holdout); it changes no decision."""
+    return any(r["patch_applied"] and r["script_passed"] and r["oracle_passed"] for r in attempts)
 
 
 def cause_correct(truth: str, out: dict | None) -> bool:
@@ -50,7 +57,8 @@ def section(split: str, rows: list[dict]) -> list[str]:
     ns_discarded = sum(r["patch_discarded"] for f in non_script for r in cases[f["heal_id"]])
     correct = [f for f in finals if f["final_decision"] == f["expected_decision"]]
     diag_ok = [f for f in finals if cause_correct(f["truth_cause"], f["agent_output"])]
-    detail_ok = [f for f in finals if f["agent_output"] and f["agent_output"]["cause_detail"] == f["failure_type"]]
+    detail_ok = [f for f in finals if f["agent_output"]
+                 and f["agent_output"]["cause_detail"] == DETAIL.get(f["failure_type"], f["failure_type"])]
     cost = sum(r["cost_usd"] for r in rows)
     tries = sum(f["attempt"] for f in healed) / len(healed) if healed else None
     unmatched = sum(bool(f.get("injector_unmatched")) for f in finals + no_failure)
@@ -60,6 +68,8 @@ def section(split: str, rows: list[dict]) -> list[str]:
            f"{unmatched} with an injector that matched nothing. Attempts: {len(attempts)}.", "",
            "| Metric | Value |", "|---|---|",
            f"| Heal rate (auto-applied, oracle pass / heal-able) | {rate(len(healed), len(healable))} |",
+           f"| Correct fix proposed* (a patch passed rerun + oracle, any final decision / heal-able) | "
+           f"{rate(sum(fix_proposed(cases[f['heal_id']]) for f in healable), len(healable))} |",
            f"| **Wrong-fix rate, caught in sandbox** (script pass, oracle fail / patched reruns) | {rate(len(wrong), len(patched))} |",
            f"| Wrong fixes auto-applied (0 by construction: policy needs an oracle pass) | "
            f"{sum(f['final_decision'] == 'auto_apply' and not f['oracle_passed'] for f in finals)} |",
@@ -94,6 +104,73 @@ def section(split: str, rows: list[dict]) -> list[str]:
     return out + [""]
 
 
+FLAKY = {"timing": "tm", "element_matching": "em"}
+BAD_FIXES = ("fixed_sleep", "positional_pick", "wrong_patient")
+
+
+def bad_fix_types(r: dict) -> set[str]:
+    """Bad-fix types of one attempt. wrong_patient = a patched element-matching rerun that finished
+    but failed the oracle (the script read some other chart)."""
+    types = {r["bad_fix_type"]} if r.get("bad_fix_type") else set()
+    if (r["failure_type"] == "element_matching" and r["patch_applied"] and r["script_passed"]
+            and not r["oracle_passed"]):
+        types.add("wrong_patient")
+    return types
+
+
+def flaky_section(rows: list[dict]) -> list[str]:
+    """Pivot v0.4 (B6): timing and element matching, dev and holdout side by side, plus bad fixes."""
+    rows = [r for r in rows if r["failure_type"] in FLAKY]
+    cases = defaultdict(list)
+    for r in rows:
+        cases[r["heal_id"]].append(r)
+    finals = [sorted(a, key=lambda r: r["attempt"])[-1] for a in cases.values()]
+    finals = [f for f in finals if f["final_decision"] != "no_failure"]
+    cols = [(t, s) for t in FLAKY for s in ("dev", "holdout")]
+
+    def cell(t, s, metric):
+        fs = [f for f in finals if f["failure_type"] == t and f["split"] == s]
+        if not fs:
+            return "not run"
+        heals = [f for f in fs if f["final_decision"] == "auto_apply" and f["oracle_passed"]]
+        atts = [r for f in fs for r in cases[f["heal_id"]]]
+        if metric == "heal":
+            return rate(len(heals), len(fs))
+        if metric == "proposed":
+            return rate(sum(fix_proposed(cases[f["heal_id"]]) for f in fs), len(fs))
+        if metric == "decision":
+            return rate(sum(f["final_decision"] == f["expected_decision"] for f in fs), len(fs))
+        if metric == "cause":
+            return rate(sum(cause_correct(f["truth_cause"], f["agent_output"]) for f in fs), len(fs))
+        if metric == "detail":
+            return ", ".join(f"{d} {n}" for d, n in sorted(Counter(
+                (f["agent_output"] or {}).get("cause_detail") for f in fs).items(), key=str))
+        if metric == "tries":
+            return f"{sum(f['attempt'] for f in heals) / len(heals):.2f} ({len(heals)} heals)" if heals else "n/a (0 heals)"
+        if metric == "attempts":
+            return str(len(atts))
+        return f"${sum(r['cost_usd'] for r in atts):.4f}"
+
+    metrics = [("heal", "Heal rate (auto-applied, oracle pass / cases)"),
+               ("proposed", "Correct fix proposed* (patch passed rerun + oracle, any final decision / cases)"),
+               ("decision", "Final decision = expected / cases"),
+               ("cause", "Cause correct (script / cases)"),
+               ("detail", "cause_detail chosen (expected: timing / element_match from agent v3)"),
+               ("tries", "Tries per heal"), ("attempts", "Attempts"), ("cost", "Cost")]
+    out = ["## Timing and element matching (16% of Beacon failures)", "",
+           "| Metric | " + " | ".join(f"{FLAKY[t]} {s}" for t, s in cols) + " |", "|---|" + "---|" * len(cols)]
+    out += [f"| {label} | " + " | ".join(cell(t, s, m) for t, s in cols) + " |" for m, label in metrics]
+
+    attempts = [r for r in rows if r["decision"] != "no_failure"]
+    out += ["", "Bad-fix attempts by type (every attempt, applied or not; applied must be 0):", "",
+            "| Type | Rejected | Applied | Total |", "|---|---|---|---|"]
+    for t in BAD_FIXES:
+        hit = [r for r in attempts if t in bad_fix_types(r)]
+        applied = sum(r["decision"] == "auto_apply" for r in hit)
+        out.append(f"| {t} | {len(hit) - applied} | {applied} | {len(hit)} of {len(attempts)} attempts |")
+    return out + [""]
+
+
 def metric_rows(lines: list[str]) -> list[tuple[str, str]]:
     """(metric, value) pairs from a section's metric table."""
     start = lines.index("| Metric | Value |") + 2
@@ -106,6 +183,7 @@ def main() -> None:
     ap.add_argument("--batch", required=True, nargs="+", help="one or more batch ids, e.g. a dev and a holdout batch")
     ap.add_argument("--out", type=Path, help="default: results/<batch>/scorecard.md")
     ap.add_argument("--log", type=Path, default=ATTEMPTS, help="attempt log; results/final/attempts.jsonl is the committed copy")
+    ap.add_argument("--v1-log", type=Path, help="also add a 'v1: original scope' section from this log (read only)")
     a = ap.parse_args()
     rows = [json.loads(l) for l in a.log.read_text().splitlines() if l.strip()]
     rows = [r for r in rows if r.get("batch_id") in a.batch]
@@ -114,7 +192,9 @@ def main() -> None:
     models = sorted({r["model"] for r in rows})
     versions = sorted({r["agent_version"] for r in rows})
     lines = [f"# Scorecard: {', '.join(a.batch)}", "",
-             f"Agent {', '.join(versions)}, model {', '.join(models)}. Generated from logs/attempts.jsonl only.", ""]
+             f"Agent {', '.join(versions)}, model {', '.join(models)}. Generated from logs/attempts.jsonl only.", "",
+             "Notes: \\* \"Correct fix proposed\" was added on 20 Oct 2026, after the v2 holdout had run. It is "
+             "reporting only, computed from the same logged attempts, and changes no decision or other metric.", ""]
     sections = {}
     for split in ("dev", "holdout"):
         split_rows = [r for r in rows if r["split"] == split]
@@ -123,8 +203,15 @@ def main() -> None:
         dev, hold = metric_rows(sections["dev"]), metric_rows(sections["holdout"])
         lines += ["## Dev vs holdout", "", "| Metric | Dev | Holdout |", "|---|---|---|"]
         lines += [f"| {m} | {d} | {h} |" for (m, d), (_, h) in zip(dev, hold)] + [""]
+    if any(r["failure_type"] in FLAKY for r in rows):
+        lines += flaky_section(rows)
     for s in sections.values():
         lines += s
+    if a.v1_log:
+        v1 = [json.loads(l) for l in a.v1_log.read_text().splitlines() if l.strip()]
+        lines += [f"# v1: original scope (from {a.v1_log})", ""]
+        for split in ("dev", "holdout"):
+            lines += [l.replace(f"## {split}", f"## v1 {split}", 1) for l in section(split, [r for r in v1 if r["split"] == split])]
     out = a.out or Path("results") / a.batch[0] / "scorecard.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines))

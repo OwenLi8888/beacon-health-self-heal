@@ -59,13 +59,15 @@ def main() -> None:
     ap.add_argument("--kwargs", required=True, help="JSON object passed to the entry function")
     ap.add_argument("--variant")
     ap.add_argument("--run-dir", type=Path, required=True)
+    ap.add_argument("--headed", action="store_true")
+    ap.add_argument("--slowmo", type=float, default=0, help="ms between Playwright actions (demo)")
     a = ap.parse_args()
 
     fn = load_entry(a.script_path, a.entry)
     tee = Tee(sys.stderr)
     sys.stderr = tee
     with sync_playwright() as p:
-        context = p.chromium.launch().new_context()
+        context = p.chromium.launch(headless=not a.headed, slow_mo=a.slowmo).new_context()
         applied = injectors.apply(context, a.variant) if a.variant else None
         page = context.new_page()
         try:

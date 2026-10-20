@@ -80,14 +80,14 @@ def _diag(**kw):
 
 def test_policy():
     src = "@step\n@writes_data\ndef save():\n    pass\n\ndef read():\n    pass\n"
-    assert policy.decide(_diag(), 2, [7], src, True, True) == "auto_apply"
-    assert policy.decide(_diag(cause_category="infra"), 0, [], src, False, False) == "reported"
-    assert policy.decide(_diag(confidence=0.7), 2, [7], src, True, True) == "escalate"
-    assert policy.decide(_diag(), 11, [7], src, True, True) == "escalate"
-    assert policy.decide(_diag(), 2, [4], src, True, True) == "escalate"  # inside @writes_data
-    assert policy.decide(_diag(), 2, [7], src, True, False) == "escalate"
-    assert policy.decide(_diag(), 1, [2], src, True, True) == "escalate"  # deleting @writes_data itself
-    assert policy.decide(_diag(cause_category="unknown"), 0, [], src, False, False) == "escalate"
+    assert policy.decide(_diag(), 2, [7], src, True, True, first_error=None) == "auto_apply"
+    assert policy.decide(_diag(cause_category="infra"), 0, [], src, False, False, first_error=None) == "reported"
+    assert policy.decide(_diag(confidence=0.7), 2, [7], src, True, True, first_error=None) == "escalate"
+    assert policy.decide(_diag(), 11, [7], src, True, True, first_error=None) == "escalate"
+    assert policy.decide(_diag(), 2, [4], src, True, True, first_error=None) == "escalate"  # inside @writes_data
+    assert policy.decide(_diag(), 2, [7], src, True, False, first_error=None) == "escalate"
+    assert policy.decide(_diag(), 1, [2], src, True, True, first_error=None) == "escalate"  # deleting @writes_data itself
+    assert policy.decide(_diag(cause_category="unknown"), 0, [], src, False, False, first_error=None) == "escalate"
 
 
 def _row(run_id, attempt, decision, final, **kw):
@@ -111,3 +111,17 @@ def test_scorecard_from_rows():
     assert "100% (1 of 1;" in text  # heal rate
     assert "50% (1 of 2;" in text  # wrong-fix caught in sandbox
     assert "0% (0 of 1;" in text  # non-script patch rate
+
+
+def test_flaky_section_counts_bad_fixes():
+    from scorecard.score import flaky_section
+    em = dict(variant="em_01", failure_type="element_matching")
+    rows = [_row("t1", 1, "rejected_bad_fix", "rejected_bad_fix", variant="tm_01", failure_type="timing",
+                 bad_fix_type="fixed_sleep"),
+            _row("e1", 1, "rerun_failed", None, oracle_passed=False, bad_fix_type="positional_pick", **em),  # wrong chart
+            _row("e1", 2, "auto_apply", "auto_apply", **em)]
+    text = "\n".join(flaky_section(rows))
+    assert "| fixed_sleep | 1 | 0 | 1 of 3 attempts |" in text
+    assert "| positional_pick | 1 | 0 | 1 of 3 attempts |" in text
+    assert "| wrong_patient | 1 | 0 | 1 of 3 attempts |" in text
+    assert "0% (0 of 1;" in text and "100% (1 of 1;" in text  # tm dev heal rate, em dev heal rate

@@ -18,7 +18,9 @@ from oracle import s1_read_a1c, s2_book_appointment
 
 OUT = Path("results/baseline")
 
-S1_CASES = [("Rosa", "Delgado"), ("Marcus", "Bell"), ("Priya", "Raman"), ("Elena", "Delgado")]
+# (first, last, date of birth from env/seed/seed.sql)
+S1_CASES = [("Rosa", "Delgado", "1961-03-14"), ("Marcus", "Bell", "1958-11-02"), ("Priya", "Raman", "1974-07-21"),
+            ("Elena", "Delgado", "1990-01-30")]
 # Weekdays inside the seeded 08:00-17:00 office hours. Both providers, 15- and 30-minute types,
 # the first slot of the day, and patients who share a last name.
 S2_CASES = [
@@ -31,10 +33,10 @@ S2_CASES = [
 
 
 def run_s1(case) -> tuple[list[str], dict, callable]:
-    first, last = case
+    first, last, dob = case
     def judge(out):
         return s1_read_a1c.check(first, last, Decimal(out["value"]), date.fromisoformat(out["date"]))
-    return ["--first", first, "--last", last], {"patient": f"{first} {last}"}, judge
+    return ["--first", first, "--last", last, "--dob", dob], {"patient": f"{first} {last}"}, judge
 
 
 def run_s2(case) -> tuple[list[str], dict, callable]:

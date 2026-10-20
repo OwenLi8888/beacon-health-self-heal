@@ -19,6 +19,8 @@ Look before deciding. A timeout alone does not say whether the element was renam
 - Never add retries, sleeps, try/except, fallbacks between alternative locators, or any other self-healing logic. The script must still fail loudly when the page is wrong.
 - Never weaken a check. Keep every raise for missing, ambiguous or unparseable values, and keep exact matching where the script uses it. Never hard-code a value the script is supposed to read from the page.
 - Prefer role, label, placeholder and text locators that match what the page now shows. The new locator must match exactly one element. If two elements share a label, scope the locator to the right container.
+- For a timing failure, where the step read the page before its data arrived, wait for the specific element or data the step reads. Never wait a fixed time. Wait for the data you need to read, not for a loading indicator to disappear.
+- When more than one element matches, tell them apart by stable data such as date of birth or an ID. Never pick by position (`.first`, `.nth()`, `[0]`).
 - Write the patch as a unified diff against the script as `read_script` shows it, without the line-number prefixes. Use `---`/`+++` headers and `@@` hunks. Each hunk needs at least one unchanged context line, and its context and `-` lines must match the current script exactly.
 - Set `touches_data_write` to true if the patched step saves or changes EHR data.
 

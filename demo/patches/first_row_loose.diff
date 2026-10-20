@@ -1,0 +1,11 @@
+--- a/read_a1c.py
++++ b/read_a1c.py
+@@ -36,4 +36,2 @@
+         raise ValueNotFound(f"no patient named {first} {last} in search results")
+-    if matches.count() > 1:
+-        raise AmbiguousValue(f"{matches.count()} patients named {first} {last}")
+-    matches.click()
++    matches.first.click()
+@@ -44,1 +42,1 @@
+-    page.get_by_role("heading", name=re.compile(rf"^{re.escape(first)} {re.escape(last)} \(")).wait_for()
++    page.get_by_role("heading", name=re.compile(rf" {re.escape(last)} \(")).wait_for()

@@ -24,6 +24,38 @@ SET_ATTRIBUTE_JS = """(() => {
   new MutationObserver(fix).observe(document, {childList: true, subtree: true});
 })();"""
 
+# Detaches the table's data rows (2+ cells) as the parser inserts them and puts them back delay_ms after
+# the first one was held: the header is there, the data isn't yet. With a `placeholder`, a one-cell
+# loading row stands in for them; without one, nothing does (an invisible empty text node marks the spot).
+DELAY_ROWS_JS = """(() => {
+  const cfg = %s;
+  if (!location.pathname.includes(cfg.url)) return;
+  const held = [];
+  let anchor = null, timer = null;
+  const hold = () => {
+    for (const row of document.querySelectorAll(cfg.selector + ' tr')) {
+      if (row === anchor || row.querySelectorAll(':scope > td').length < 2) continue;
+      if (!anchor) {
+        if (cfg.placeholder) {
+          anchor = document.createElement('tr');
+          anchor.innerHTML = `<td colspan="${row.children.length}" class="text-center">${cfg.placeholder}</td>`;
+        } else {
+          anchor = document.createTextNode('');
+        }
+        row.before(anchor);
+      }
+      held.push(row);
+      row.remove();
+      window.__h();
+    }
+    if (held.length && !timer) {
+      timer = setTimeout(() => { obs.disconnect(); anchor.after(...held); anchor.remove(); }, cfg.delay_ms);
+    }
+  };
+  const obs = new MutationObserver(hold);
+  obs.observe(document, {childList: true, subtree: true});
+})();"""
+
 
 def load_catalog() -> dict[str, dict]:
     variants = yaml.safe_load(CATALOG.read_text())["variants"]
@@ -68,6 +100,30 @@ def apply(context: BrowserContext, variant_id: str) -> Applied:
 
         context.expose_function("__h", hit)
         context.add_init_script(SET_ATTRIBUTE_JS % json.dumps(inj))
+    elif inj["kind"] == "delay_rows":
+        key = f"{inj['selector']} rows"
+        applied.hits = {key: 0}
+
+        def hit() -> None:
+            applied.hits[key] += 1
+
+        context.expose_function("__h", hit)
+        context.add_init_script(DELAY_ROWS_JS % json.dumps(inj))
+    elif inj["kind"] == "duplicate_row":
+        key = json.dumps(inj["match"])
+        applied.hits = {key: 0}
+
+        def handler(route: Route) -> None:
+            resp = route.fetch()
+            data = json.loads(resp.text())
+            rows = [r for r in data["aaData"] if all(r.get(k) == v for k, v in inj["match"].items())]
+            if rows:  # a copy of the real row, so the markup is the same; only `overrides` differ
+                data["aaData"].insert(0, {**rows[0], **inj["overrides"]})
+                data["iTotalDisplayRecords"] = int(data["iTotalDisplayRecords"]) + 1
+                applied.hits[key] += 1
+            route.fulfill(response=resp, body=json.dumps(data))
+
+        context.route(lambda url: inj["url"] in url, handler)
     elif inj["kind"] == "status":
         applied.hits = {"<any request>": 0}
 
