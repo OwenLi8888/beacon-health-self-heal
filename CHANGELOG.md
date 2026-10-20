@@ -13,6 +13,10 @@ The tm_01 fix now waits for the data: `expect(<date cells>).not_to_have_count(0)
 - **`expect()` defaults to a 5 s timeout and tm_02 delays 6 s.** The dev fix shape may fail tm_02's rerun, which is what the holdout should show. The B2 report flagged this risk. A `locator.wait_for()` (30 s) would not have it.
 - **The new `cause_detail` values went unused.** The agent still picked `slow_page` (tm) and `other` (em) in 6 of 6, so diagnosis accuracy is 0 of 6. The prompt never describes the values, so the schema alone didn't move the choice.
 
+**Holdout, run once** `b20261020-003223-e88e` (tm_02 + em_02 × 3): heal rate 1 of 6, wrong fixes 0, bad fixes 0 of 6 attempts, $0.2242.
+- **tm_02, 0 of 3.** All three were `unknown`/escalate with no patch. With no loading indicator, the failure snapshot shows only an empty table, and the agent read it as missing data, not timing. So the `expect()` 5 s timeout was never tested.
+- **em_02, 1 of 3.** All three wrote the name + DOB patch, and all three reruns passed the oracle. One auto-applied. One escalated in policy (confidence 0.75 < 0.8). One was proposed as escalate by the agent ("a human should confirm the requested DOB is the intended patient").
+
 - **Schema:** `cause_detail` gets `timing` and `element_match`. Under v2 the agent had to pick `slow_page` (tm) or `other` (em), so diagnosis accuracy couldn't be measured.
 - **Prompt:** one sentence: "Wait for the data you need to read, not for a loading indicator to disappear."
 - **Why:** the v2 dev batch `b20261019-235227-171f` healed 6 of 6, with 0 bad fixes and $0.17 spent. But all 3 tm_01 patches waited for the injected "Loading results…" text to be hidden. That passes tm_01, but it is tied to that one indicator. tm_02 was redesigned in the same round to have no indicator (see DECISIONS.md), so that kind of fix now fails the holdout.
