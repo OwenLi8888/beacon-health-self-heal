@@ -31,6 +31,18 @@ Two frozen versions, each run once on its holdout. All runs used claude-sonnet-5
   - Write-up draft: [docs/WRITEUP_DRAFT.md](docs/WRITEUP_DRAFT.md).
 - **Read the intervals, not the percentages.** The samples are small (3 cases per variant). The v2 scope covers one of Beacon's failure categories, about 16% of its failures.
 
+Coverage against Beacon's failure mix:
+
+| Failure category | Share | Built | Holdout result |
+|---|---|---|---|
+| Unexpected screen / popup | ~26% | No | not built |
+| Sign-in / session | ~17% | No | not built |
+| Timing and element matching | ~16% | Yes, v2 (tm, em) | tm 0 of 3, em 1 of 3 |
+| UI change (renamed selectors), not in Beacon's top 3 | n/a | Yes, v1 (sc) | sc 3 of 3 |
+| Other causes, not broken down by Beacon (~41%, by subtraction) | ~41% | No | not built |
+
+Site down (every request answers 502) is a control case, not a category. The agent must report it and never patch, and it did so 3 of 3 in v1 dev.
+
 ## Quickstart
 
 You need WSL2 Ubuntu (or Linux) with Docker, GNU make and [uv](https://docs.astral.sh/uv/), plus Chromium's system libraries:
