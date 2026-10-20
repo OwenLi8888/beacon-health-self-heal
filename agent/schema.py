@@ -8,7 +8,8 @@ class Diagnosis(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     cause_category: Literal["script", "site", "infra", "unknown"]
-    cause_detail: Literal["selector_changed", "popup_modal", "login_changed", "slow_page", "site_down", "other"]
+    cause_detail: Literal["selector_changed", "popup_modal", "login_changed", "slow_page", "site_down", "timing",
+                          "element_match", "other"]
     failing_step: str | None
     evidence: list[str] = Field(description="Short strings pointing at DOM or screenshot facts")
     confidence: float = Field(ge=0.0, le=1.0)

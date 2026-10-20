@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 ATTEMPTS = Path("logs/attempts.jsonl")
+DETAIL = {"element_matching": "element_match"}  # catalog failure type -> agent cause_detail, where they differ
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -50,7 +51,8 @@ def section(split: str, rows: list[dict]) -> list[str]:
     ns_discarded = sum(r["patch_discarded"] for f in non_script for r in cases[f["heal_id"]])
     correct = [f for f in finals if f["final_decision"] == f["expected_decision"]]
     diag_ok = [f for f in finals if cause_correct(f["truth_cause"], f["agent_output"])]
-    detail_ok = [f for f in finals if f["agent_output"] and f["agent_output"]["cause_detail"] == f["failure_type"]]
+    detail_ok = [f for f in finals if f["agent_output"]
+                 and f["agent_output"]["cause_detail"] == DETAIL.get(f["failure_type"], f["failure_type"])]
     cost = sum(r["cost_usd"] for r in rows)
     tries = sum(f["attempt"] for f in healed) / len(healed) if healed else None
     unmatched = sum(bool(f.get("injector_unmatched")) for f in finals + no_failure)
@@ -142,7 +144,7 @@ def flaky_section(rows: list[dict]) -> list[str]:
     metrics = [("heal", "Heal rate (auto-applied, oracle pass / cases)"),
                ("decision", "Final decision = expected / cases"),
                ("cause", "Cause correct (script / cases)"),
-               ("detail", "cause_detail chosen (schema has no timing/matching value)"),
+               ("detail", "cause_detail chosen (expected: timing / element_match from agent v3)"),
                ("tries", "Tries per heal"), ("attempts", "Attempts"), ("cost", "Cost")]
     out = ["## Timing and element matching (16% of Beacon failures)", "",
            "| Metric | " + " | ".join(f"{FLAKY[t]} {s}" for t, s in cols) + " |", "|---|" + "---|" * len(cols)]

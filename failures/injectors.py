@@ -24,27 +24,32 @@ SET_ATTRIBUTE_JS = """(() => {
   new MutationObserver(fix).observe(document, {childList: true, subtree: true});
 })();"""
 
-# Detaches the table's data rows (2+ cells) as the parser inserts them, shows a one-cell loading row,
-# and puts the rows back delay_ms after the first one was held: the header is there, the data isn't yet.
+# Detaches the table's data rows (2+ cells) as the parser inserts them and puts them back delay_ms after
+# the first one was held: the header is there, the data isn't yet. With a `placeholder`, a one-cell
+# loading row stands in for them; without one, nothing does (an invisible empty text node marks the spot).
 DELAY_ROWS_JS = """(() => {
   const cfg = %s;
   if (!location.pathname.includes(cfg.url)) return;
   const held = [];
-  let loading = null, timer = null;
+  let anchor = null, timer = null;
   const hold = () => {
     for (const row of document.querySelectorAll(cfg.selector + ' tr')) {
-      if (row === loading || row.querySelectorAll(':scope > td').length < 2) continue;
-      if (!loading) {
-        loading = document.createElement('tr');
-        loading.innerHTML = `<td colspan="${row.children.length}" class="text-center">${cfg.placeholder}</td>`;
-        row.before(loading);
+      if (row === anchor || row.querySelectorAll(':scope > td').length < 2) continue;
+      if (!anchor) {
+        if (cfg.placeholder) {
+          anchor = document.createElement('tr');
+          anchor.innerHTML = `<td colspan="${row.children.length}" class="text-center">${cfg.placeholder}</td>`;
+        } else {
+          anchor = document.createTextNode('');
+        }
+        row.before(anchor);
       }
       held.push(row);
       row.remove();
       window.__h();
     }
     if (held.length && !timer) {
-      timer = setTimeout(() => { obs.disconnect(); loading.after(...held); loading.remove(); }, cfg.delay_ms);
+      timer = setTimeout(() => { obs.disconnect(); anchor.after(...held); anchor.remove(); }, cfg.delay_ms);
     }
   };
   const obs = new MutationObserver(hold);

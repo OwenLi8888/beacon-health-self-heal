@@ -2,7 +2,13 @@
 
 Agent versions and their numbers. The agent is the prompt (`agent/prompt.md`), the tools (`agent/tools.py`) and the policy (`policy.py`).
 
-## v2 (19 Oct 2026), in progress on `feature/failure-mix`
+## v3 (20 Oct 2026), the one tuning round on `feature/failure-mix`
+
+- **Schema:** `cause_detail` gets `timing` and `element_match`. Under v2 the agent had to pick `slow_page` (tm) or `other` (em), so diagnosis accuracy couldn't be measured.
+- **Prompt:** one sentence: "Wait for the data you need to read, not for a loading indicator to disappear."
+- **Why:** the v2 dev batch `b20261019-235227-171f` healed 6 of 6, with 0 bad fixes and $0.17 spent. But all 3 tm_01 patches waited for the injected "Loading results…" text to be hidden. That passes tm_01, but it is tied to that one indicator. tm_02 was redesigned in the same round to have no indicator (see DECISIONS.md), so that kind of fix now fails the holdout.
+
+## v2 (19 Oct 2026), on `feature/failure-mix`
 
 Pivot v0.4 (timing and element matching):
 - Policy: a fixed sleep (`sleep(`, `wait_for_timeout(`) is `rejected_bad_fix`. A positional pick (`.first`, `.last`, `.nth(`, `[n]`) is also `rejected_bad_fix` when the failure was a multiple match.
