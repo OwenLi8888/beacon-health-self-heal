@@ -11,7 +11,7 @@ Two frozen versions, each run once on its holdout. All runs used claude-sonnet-5
 | | v1 dev | v1 holdout | v2 dev | v2 holdout |
 |---|---|---|---|---|
 | Scope | selector changes + site down | selector change | timing (tm_01) + element matching (em_01) | timing (tm_02) + element matching (em_02) |
-| Agent, frozen at | v1, `418d819` | v1, `418d819` | v3, `ce1af86` | v3, `ce1af86` |
+| Agent, frozen at | v1, `418d819` | v1, `418d819` | v3, `4cd73c1` | v3, `4cd73c1` |
 | Heal rate | 9 of 9 | 3 of 3 | 6 of 6 | **1 of 6** (tm 0 of 3, em 1 of 3) |
 | Correct fix proposed* | 9 of 9 | 3 of 3 | 6 of 6 | 3 of 6 (tm 0 of 3, em 3 of 3) |
 | Final decision = expected | 12 of 12 | 3 of 3 | 6 of 6 | 1 of 6 |
