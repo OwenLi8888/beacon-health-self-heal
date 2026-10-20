@@ -30,6 +30,9 @@ def main() -> None:
             if r.get("patch_applied"):
                 print(f"   rerun: script_passed={r['script_passed']} oracle_passed={r['oracle_passed']} "
                       f"diff_lines={r['diff_lines']} rerun=runs/{r['rerun_run_id']}/")
+            if r.get("bad_fix_type"):
+                print(f"   BAD FIX: {r['bad_fix_type']} "
+                      f"({'rejected by policy after the sandbox rerun, not kept' if r['decision'] == 'rejected_bad_fix' else 'sandbox rerun failed'})")
             if r.get("error"):
                 print(f"   error: {r['error']}")
             for e in out.get("evidence", []):

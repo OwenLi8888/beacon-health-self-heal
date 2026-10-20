@@ -4,6 +4,7 @@ On failure, runs/<run_id>/ holds the bundle the heal agent may read (error.json,
 dom.html, dom_full.html). Ground truth (variant, labels, oracle detail) goes only to
 logs/runs.jsonl, which the agent may not read, so a bundle never says what was injected.
 Usage: uv run python -m harness.run --script read_a1c [--variant sc_01] [--patch demo/patches/x.diff]
+       [--headed --slowmo 300]
 """
 import argparse
 import json
@@ -54,7 +55,7 @@ class RunResult:
 
 
 def run(script: str, variant: str | None = None, case: tuple | None = None, reset: bool = True,
-        script_path: Path | None = None) -> RunResult:
+        script_path: Path | None = None, headed: bool = False, slowmo: float = 0) -> RunResult:
     cases, build, to_kwargs = SCRIPTS[script]
     case = case or variant_case(script, variant) or cases[0]
     _, record, judge = build(case)
@@ -67,7 +68,7 @@ def run(script: str, variant: str | None = None, case: tuple | None = None, rese
     proc = subprocess.run(
         [sys.executable, "-m", "harness.child", "--script-path", str(script_path or Path("scripts") / f"{script}.py"),
          "--entry", script, "--kwargs", json.dumps(to_kwargs(case)), "--run-dir", str(run_dir),
-         *(["--variant", variant] if variant else [])],
+         *(["--variant", variant] if variant else []), *(["--headed"] if headed else []), "--slowmo", str(slowmo)],
         capture_output=True, text=True, timeout=600)
     seconds = round(time.monotonic() - start, 1)
     lines = proc.stdout.strip().splitlines()
@@ -112,13 +113,17 @@ def main() -> None:
     ap.add_argument("--script", choices=SCRIPTS, required=True)
     ap.add_argument("--variant")
     ap.add_argument("--patch", type=Path, help="hand-written diff, run on a copy of the script (demos the lazy fixes)")
+    ap.add_argument("--headed", action="store_true", help="show the browser (demo)")
+    ap.add_argument("--slowmo", type=float, default=0, help="ms between Playwright actions (demo)")
     a = ap.parse_args()
     script_path = None
     if a.patch:
         script_path = RUNS / "patched" / a.patch.stem / f"{a.script}.py"
         script_path.parent.mkdir(parents=True, exist_ok=True)
         script_path.write_text(patching.apply((Path("scripts") / f"{a.script}.py").read_text(), a.patch.read_text()))
-    r = run(a.script, a.variant, script_path=script_path)
+    r = run(a.script, a.variant, script_path=script_path, headed=a.headed, slowmo=a.slowmo)
+    if r.script_passed:  # the oracle only judges a finished script
+        print(json.loads(LOG.read_text().splitlines()[-1])["oracle"])
     print(json.dumps(asdict(r)))
     sys.exit(0 if r.passed else 1)
 

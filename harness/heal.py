@@ -28,7 +28,8 @@ def split_variant(variant: str, split: str) -> dict:
     return truth
 
 
-def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, split: str = "dev") -> list[dict]:
+def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, split: str = "dev",
+              headed: bool = False, slowmo: float = 0) -> list[dict]:
     truth = split_variant(variant, split)
     model = model_from_env()
     script = truth["script"]
@@ -36,7 +37,7 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
     cases = SCRIPTS[script][0]
     case = variant_case(script, variant) or cases[case_index % len(cases)]
 
-    first = run(script, variant, case)
+    first = run(script, variant, case, headed=headed, slowmo=slowmo)
     if first.passed:  # injector didn't break the run; nothing to heal
         records = [{"attempt": 0, "agent_version": AGENT_VERSION, "model": model, "agent_output": None,
                     "decision": "no_failure", "final_decision": "no_failure", "patch_applied": False,
@@ -48,7 +49,7 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
 
         def judge(sandbox, diag, diff_lines, touched):
             try:
-                r = run(script, variant, case, script_path=sandbox)
+                r = run(script, variant, case, script_path=sandbox, headed=headed, slowmo=slowmo)
             except (RuntimeError, subprocess.TimeoutExpired) as e:  # patched script crashed the child or hung
                 return {"script_passed": False, "oracle_passed": False, "rerun_run_id": None,
                         "bundle_dir": None, "error": f"{type(e).__name__}: {str(e)[:500]}", "decision": "escalate"}
@@ -84,8 +85,10 @@ def main() -> None:
     ap.add_argument("--case", type=int, default=0, help="index into the script's test cases")
     # scratch = your own experiments; batch and scorecard only count dev and holdout
     ap.add_argument("--split", choices=["dev", "scratch"], default="dev")
+    ap.add_argument("--headed", action="store_true", help="show the browser (demo)")
+    ap.add_argument("--slowmo", type=float, default=0, help="ms between Playwright actions (demo)")
     a = ap.parse_args()
-    for rec in heal_case(a.variant, a.case, split=a.split):
+    for rec in heal_case(a.variant, a.case, split=a.split, headed=a.headed, slowmo=a.slowmo):
         print(json.dumps({k: v for k, v in rec.items() if k != "calls"}))
 
 
