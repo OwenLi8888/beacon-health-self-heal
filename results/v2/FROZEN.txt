@@ -1,0 +1,5 @@
+agent_version: v3
+commit: ce1af8685afaa295ae3b77ed006714ecfb58bf1b
+frozen: 2026-10-20T00:19:02-04:00
+dev batch: b20261020-001525-8bae (tm_01, em_01 x3, claude-sonnet-5-5): 6 of 6 healed, 0 bad fixes, see dev_scorecard.md
+The agent (agent/, policy.py) does not change after this commit. Holdout (tm_02, em_02) runs once, via harness.batch.

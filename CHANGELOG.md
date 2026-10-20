@@ -2,7 +2,16 @@
 
 Agent versions and their numbers. The agent is the prompt (`agent/prompt.md`), the tools (`agent/tools.py`) and the policy (`policy.py`).
 
-## v3 (20 Oct 2026), the one tuning round on `feature/failure-mix`
+## v3 (20 Oct 2026), the one tuning round on `feature/failure-mix`, frozen
+
+**Dev batch** `b20261020-001525-8bae` (claude-sonnet-5-5, tm_01 + em_01 × 3), frozen at `ce1af86` (`results/v2/FROZEN.txt`):
+- heal rate 6 of 6, 1.00 tries per heal
+- bad fixes 0 of 6 attempts
+- $0.1858 total
+
+The tm_01 fix now waits for the data: `expect(<date cells>).not_to_have_count(0)`, where v2 waited for "Loading results…" to hide. Two findings were kept as findings, not tuned, so the holdout result means something:
+- **`expect()` defaults to a 5 s timeout and tm_02 delays 6 s.** The dev fix shape may fail tm_02's rerun, which is what the holdout should show. The B2 report flagged this risk. A `locator.wait_for()` (30 s) would not have it.
+- **The new `cause_detail` values went unused.** The agent still picked `slow_page` (tm) and `other` (em) in 6 of 6, so diagnosis accuracy is 0 of 6. The prompt never describes the values, so the schema alone didn't move the choice.
 
 - **Schema:** `cause_detail` gets `timing` and `element_match`. Under v2 the agent had to pick `slow_page` (tm) or `other` (em), so diagnosis accuracy couldn't be measured.
 - **Prompt:** one sentence: "Wait for the data you need to read, not for a loading indicator to disappear."
