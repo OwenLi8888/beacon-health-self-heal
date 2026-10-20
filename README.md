@@ -11,7 +11,7 @@ Two frozen versions, each run once on its holdout. All runs used claude-sonnet-5
 | | v1 dev | v1 holdout | v2 dev | v2 holdout |
 |---|---|---|---|---|
 | Scope | selector changes + site down | selector change | timing (tm_01) + element matching (em_01) | timing (tm_02) + element matching (em_02) |
-| Agent, frozen at | v1, `418d819` | v1, `418d819` | v3, `ce1af86` | v3, `ce1af86` |
+| Agent, frozen at | v1, `418d819` | v1, `418d819` | v3, `4cd73c1` | v3, `4cd73c1` |
 | Heal rate | 9 of 9 | 3 of 3 | 6 of 6 | **1 of 6** (tm 0 of 3, em 1 of 3) |
 | Correct fix proposed* | 9 of 9 | 3 of 3 | 6 of 6 | 3 of 6 (tm 0 of 3, em 3 of 3) |
 | Final decision = expected | 12 of 12 | 3 of 3 | 6 of 6 | 1 of 6 |
@@ -28,7 +28,6 @@ Two frozen versions, each run once on its holdout. All runs used claude-sonnet-5
 - **Sources:**
   - Scorecards: [results/final/scorecard.md](results/final/scorecard.md) (v1) and [results/v2/scorecard.md](results/v2/scorecard.md) (v2, dev and holdout side by side).
   - Tuning history: [CHANGELOG.md](CHANGELOG.md). Design choices: [DECISIONS.md](DECISIONS.md).
-  - Write-up draft: [docs/WRITEUP_DRAFT.md](docs/WRITEUP_DRAFT.md).
 - **Read the intervals, not the percentages.** The samples are small (3 cases per variant). The v2 scope covers one of Beacon's failure categories, about 16% of its failures.
 
 Coverage against Beacon's failure mix:
@@ -132,7 +131,7 @@ demo/patches/ hand-written fixes, lazy and correct, for harness.run --patch
 results/      final/ (v1: frozen record, attempts, scorecard)
               v2/ (FROZEN.txt, dev + holdout attempts, scorecard.md, round-1 dev_agent_v2_*)
               baseline/, injectors/verify.md, per-batch scorecards
-docs/         BEACON_BRD_PRD.md (spec), PIVOT_FAILURE_MIX.md (v2 spec), TESTING.md, WRITEUP_DRAFT.md
+docs/         BEACON_BRD_PRD.md (spec), TESTING.md
 env/          seed SQL, login and seed checks         runs/, logs/  gitignored run output
 ```
 
@@ -143,7 +142,7 @@ env/          seed SQL, login and seed checks         runs/, logs/  gitignored r
   - sign-in and session failures (about 17%)
   - a mid-run outage on one endpoint (the current site-down variant fails at login)
   - S2 booking as the data-write escalation test
-- **The v2 holdout misses are in [docs/WRITEUP_DRAFT.md](docs/WRITEUP_DRAFT.md):**
+- **The v2 holdout misses:**
   - tm_02 can't be diagnosed from one snapshot.
   - em_02's confidence lands on both sides of the 0.8 cut-off.
   - The new `cause_detail` values weren't used.

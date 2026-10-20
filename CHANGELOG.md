@@ -4,7 +4,7 @@ Agent versions and their numbers. The agent is the prompt (`agent/prompt.md`), t
 
 ## v3 (20 Oct 2026), the one tuning round on `feature/failure-mix`, frozen
 
-**Dev batch** `b20261020-001525-8bae` (claude-sonnet-5-5, tm_01 + em_01 × 3), frozen at `ce1af86` (`results/v2/FROZEN.txt`):
+**Dev batch** `b20261020-001525-8bae` (claude-sonnet-5-5, tm_01 + em_01 × 3), frozen at `4cd73c1` (`results/v2/FROZEN.txt`):
 - heal rate 6 of 6, 1.00 tries per heal
 - bad fixes 0 of 6 attempts
 - $0.1858 total
