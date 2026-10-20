@@ -29,12 +29,17 @@ def main() -> None:
     ap.add_argument("--split", choices=["dev", "holdout"], required=True)
     ap.add_argument("--repeats", type=int, required=True)
     ap.add_argument("--budget-usd", type=float, required=True)
+    ap.add_argument("--variants", nargs="+", help="only these variants of the split (default: all of them)")
     a = ap.parse_args()
     if a.split == "holdout" and not FROZEN.exists():
         raise SystemExit(f"holdout needs a frozen agent: {FROZEN} not found")
 
     batch_id = f"b{datetime.now():%Y%m%d-%H%M%S}-{secrets.token_hex(2)}"
     variants = [v for v, t in load_catalog().items() if t["split"] == a.split]
+    if a.variants:
+        if missing := set(a.variants) - set(variants):
+            raise SystemExit(f"not in the {a.split} split: {sorted(missing)}")
+        variants = [v for v in variants if v in a.variants]
     print(f"batch {batch_id}: {len(variants)} variants x {a.repeats} repeats, budget ${a.budget_usd}", flush=True)
     for rep in range(a.repeats):
         for v in variants:

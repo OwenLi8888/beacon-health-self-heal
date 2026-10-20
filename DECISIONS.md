@@ -221,3 +221,9 @@ Only decisions that affect the results, or that a reviewer would ask "why not X?
 
 ## Pivot v0.4, step 6: label leak check
 - **The step 6 grep is now word-bounded** (`\b(tm|em)_0[0-9]\b|truth_cause`). The literal `tm_0` matches OpenEMR's own `graph_item_0` in every lab page snapshot, including those from 16 Oct, before the pivot, so it could never print nothing. The other option was stripping that markup from the bundles, but that would change what the agent sees. Cost: none found. A wider sweep for every variant id, type and catalog key (`sc|sd|tm|em`, `selector_changed`, `element_matching`, `expected_decision`, `breaks_step`, injector kinds) also prints nothing.
+
+## Pivot v0.4, step 7: dev batch
+- **`harness.batch --variants`** limits a batch to named variants of its split, and refuses any variant from another split. The other option was running every dev variant again, but sc_* and sd_01 already have frozen v1 results. Cost: none.
+- **The scorecard counts `wrong_patient` from the outcome**: a patched element-matching rerun that finishes but fails the oracle. `fixed_sleep`/`positional_pick` come from the patch text (`policy.bad_fix`). A positional pick that opens the wrong chart and then fails `open_chart` counts as `positional_pick` only.
+- **Diagnosis accuracy reads 0% for tm/em** because the F6 `cause_detail` schema has no timing or matching value. The agent picked `slow_page` (tm) and `other` (em). The new section shows the chosen values instead. Adding schema values would be an agent change, so it waits for the tuning step.
+- **Results for v2 go in `results/v2/`**: `dev_scorecard.md` and `dev_attempts.jsonl`, which is this batch's rows copied from `logs/`. `results/final/` is only read, for the v1 section.
