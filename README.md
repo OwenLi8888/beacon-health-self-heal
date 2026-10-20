@@ -28,7 +28,6 @@ Two frozen versions, each run once on its holdout. All runs used claude-sonnet-5
 - **Sources:**
   - Scorecards: [results/final/scorecard.md](results/final/scorecard.md) (v1) and [results/v2/scorecard.md](results/v2/scorecard.md) (v2, dev and holdout side by side).
   - Tuning history: [CHANGELOG.md](CHANGELOG.md). Design choices: [DECISIONS.md](DECISIONS.md).
-  - Write-up draft: [docs/WRITEUP_DRAFT.md](docs/WRITEUP_DRAFT.md).
 - **Read the intervals, not the percentages.** The samples are small (3 cases per variant). The v2 scope covers one of Beacon's failure categories, about 16% of its failures.
 
 Coverage against Beacon's failure mix:
@@ -143,7 +142,7 @@ env/          seed SQL, login and seed checks         runs/, logs/  gitignored r
   - sign-in and session failures (about 17%)
   - a mid-run outage on one endpoint (the current site-down variant fails at login)
   - S2 booking as the data-write escalation test
-- **The v2 holdout misses are in [docs/WRITEUP_DRAFT.md](docs/WRITEUP_DRAFT.md):**
+- **The v2 holdout misses:**
   - tm_02 can't be diagnosed from one snapshot.
   - em_02's confidence lands on both sides of the 0.8 cut-off.
   - The new `cause_detail` values weren't used.

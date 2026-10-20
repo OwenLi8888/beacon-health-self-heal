@@ -487,7 +487,6 @@ beacon-self-heal/
 |---|---|---|---|
 | Q1 | Python or TypeScript? | Obinna | **Answered: Python is fine** |
 | Q2 | Whose API key? | Obinna | **Answered: Owen's key, reimbursed by Beacon.** Keep the $100 plan and batch caps; cost per heal is still a scorecard metric |
-| Q3 | Mid-point check-in? | Obinna | **Answered: yes, Tue 20 Oct.** Show the v1 dev scorecard, the failure taxonomy from round 1, and the trust policy draft |
 | Q4 | How are Beacon agents represented internally (scripts, step lists, recordings)? | Walkthrough call | Assume scripts |
 | Q5 | Which failure types do they see most often? | Walkthrough call | Weight equally |
 | Q6 | Are fixes per customer instance or shared across instances? | Walkthrough call | Per instance |
