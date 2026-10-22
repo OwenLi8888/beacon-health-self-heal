@@ -4,6 +4,26 @@ When a Playwright script that drives an EHR breaks, an agent works out why. If t
 
 It runs against OpenEMR in Docker with ten synthetic patients. The script under test reads a patient's latest Hemoglobin A1c. Failures are injected in the browser, so OpenEMR's source is never edited.
 
+## Problem
+
+Beacon's agents operate real EHRs through the UI, the way a person would. When one breaks, an alert fires, but finding the cause and fixing it is still manual. This project targets that gap.
+
+| Pain point | Source | What this project does about it |
+|---|---|---|
+| Diagnosis and repair are manual. Alerts already catch failures, but an engineer works out each cause and fix by hand in Claude Code. | Obinna said | The agent reads the failure bundle (error, failing step, screenshot, page HTML), names the cause, and writes a patch. |
+| Failures have no single cause. Login breaks, the site goes down, the VM fails, the UI changes, and every customer's EHR instance is set up differently. | Obinna said | The agent separates script problems from site and infrastructure problems. It patches only the script cases. A site-down failure is reported, not patched (sd_01: 3 of 3 reported in v1 dev). |
+| Engineer time per failure grows with the number of agents. Moving from about 10 practices toward 1,000 or 10,000 agents makes manual repair the bottleneck. | Obinna said | Fixes that pass the checks are approved without a person and saved as a diff ready to apply. Each heal costs about 2 to 4 cents and 19 to 26 seconds on Sonnet (from results/v2/dev_attempts.jsonl). |
+| Trusting automated debugging is "vibe-based." The team wants to review the tool's reasoning many times before relying on it, so a human stays in every loop. | Obinna said | Every heal is logged in full (`logs/heals/<id>.json`, with each tool call), and a scorecard reports heal rate, wrong fixes and cost on held-out failures the agent was never tuned on. |
+| A wrong fix is worse than no fix. A script that runs green but reads the wrong patient's value is a patient-safety problem nobody notices. Beacon's job posting says "a silent failure or invented value is far worse than an explicit error." | Obinna said | Scripts raise instead of guessing. An independent oracle checks every patched rerun against the database, and the policy rejects fixed sleeps and pick-the-first-match fixes. Wrong fixes applied: 0 across all runs. |
+| Timing and element-matching flakiness is about 16% of Beacon's script failures: reading a table before it finishes loading, clicking a list that's still scrolling, typing that doesn't register, or more than one element matching. | Obinna said | v2 targets two of these: a lab table that loads late (tm) and two patients with the same name (em). Mid-scroll clicks and lost typing are not simulated. |
+| Unexpected screens are about 26% of failures: a popup or modal on top, a leftover dialog, a window that isn't maximized, a hidden sidebar. These rare, inconsistent failures take a lot of human debugging time even when they're infrequent. | Obinna said | Not built. Next category to add, with a rule to auto-dismiss only a plain close button and escalate any dialog with action buttons. |
+| Sign-in and session failures are about 17%: session expiry, MFA, CAPTCHA, a locked session. Retrying the password locks the account, and a lockout can need someone at the practice to fix it. | Obinna said | Not built. Planned rule: escalate, never retry credentials, with a scorecard metric for credential retries (target 0). |
+| One bad stop can break every later run on the same machine. | Obinna said | Every run here starts from a fresh browser and a database reset (`make reset`), so one failure can't leak into the next. Beacon's VMs would need the same return-to-known-state step. |
+| The on-call engineer needs to know quickly who should act: fix the script, tell the customer, or call infra. Fixes made in one-off debugging sessions also leave no record of which failures keep coming back. | My assumption | Every heal ends in one of five outcomes: auto_apply, escalate (with the diagnosis, evidence and proposed diff), reported (site or infra), rejected_bad_fix, or gave_up (3 failed attempts, handed to a person). The attempt log and per-heal files give a history by failure type. |
+| While an agent is broken, the practice's work (gap closure, prior auth, pre-charting) waits or gets done by hand. | My assumption | Not measured here. Time to repair would be the production metric. |
+
+**Not solved here:** the agent only sees one snapshot of the page, so it can't tell a slow page from an empty one (tm_02 holdout 0 of 3). And its self-reported confidence is too noisy to decide on its own which fixes go live (em_02 found the right fix 3 of 3 but 1 of 3 was approved).
+
 **Start here:** [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) has three short demos (duplicate patient, slow table, site down). Each step gives the command, what it does, the output to expect and what it tells you. `bash demo/walkthrough.sh` runs all of it in one go.
 
 ## Results
