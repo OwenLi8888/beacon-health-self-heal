@@ -59,7 +59,9 @@ make setup
 
 To use the agent, open `.env` and paste your key into `ANTHROPIC_API_KEY=`. The file is gitignored. You don't need a key to run the scripts, the demos without the agent, or the scorecards.
 
-To look around OpenEMR yourself, open http://localhost:8300 and log in with `OE_USER` and `OE_PASS` from `.env`. Run `make reset` afterwards to put the database back.
+To look around OpenEMR yourself, open http://localhost:8300 (the `OPENEMR_HTTP_PORT` in `.env`) and log in with `OE_USER` and `OE_PASS` from `.env`. Run `make reset` afterwards to put the database back.
+
+Already running another copy of this stack? Before `make setup`, copy `.env.example` to `.env` and change `COMPOSE_PROJECT_NAME` and the three ports (`OPENEMR_HTTP_PORT`, `OPENEMR_HTTPS_PORT`, `DB_HOST_PORT`). Changing the project name alone still clashes on the ports.
 
 ### 2. Try it
 
