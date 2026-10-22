@@ -23,7 +23,7 @@ def bundle(tmp_path):
 
 
 @pytest.mark.parametrize("target", ["oracle/s1_read_a1c.py", "failures/catalog.yaml", "policy.py",
-                                    "logs/attempts.jsonl", "results/injectors/verify.md"])
+                                    "logs/attempts.jsonl", "logs/heals/x.json", "results/injectors/verify.md"])
 def test_denied_even_if_listed_as_allowed(target):
     with pytest.raises(PermissionError):
         check(REPO / target, [REPO])

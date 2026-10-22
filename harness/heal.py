@@ -1,4 +1,5 @@
-"""Heal one injected failure end to end and append one line per attempt to logs/attempts.jsonl.
+"""Heal one injected failure end to end: write logs/heals/<heal_id>.json and append one line per
+attempt to logs/attempts.jsonl.
 
 The harness runs the script with the variant, hands only the bundle and script path to the agent,
 and supplies the judge (rerun with the same variant + oracle + policy). Ground truth from the
@@ -15,9 +16,10 @@ from dotenv import load_dotenv
 import policy
 from agent.heal import AGENT_VERSION, heal, model_from_env
 from failures.injectors import load_catalog
-from harness.run import SCRIPTS, run, variant_case
+from harness.run import RUNS, SCRIPTS, run, variant_case
 
-ATTEMPTS = Path("logs/attempts.jsonl")
+ATTEMPTS = Path("logs/attempts.jsonl")  # index: one line per attempt, linking to its heal file
+HEALS = Path("logs/heals")  # one <heal_id>.json per heal, with the full transcript
 load_dotenv()  # ANTHROPIC_API_KEY; an inline HEAL_MODEL=... wins over .env
 
 
@@ -43,7 +45,8 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
                     "decision": "no_failure", "final_decision": "no_failure", "patch_applied": False,
                     "patch_discarded": False, "diff_lines": 0, "script_passed": True, "oracle_passed": True,
                     "tool_calls": 0, "model_calls": 0, "input_tokens": 0, "output_tokens": 0,
-                    "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "wall_seconds": 0.0}]
+                    "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "wall_seconds": 0.0,
+                    "transcript": []}]
     else:
         original = script_path.read_text()
 
@@ -72,11 +75,27 @@ def heal_case(variant: str, case_index: int = 0, batch_id: str | None = None, sp
         patch = (rec.get("agent_output") or {}).get("patch")
         out.append({**joined, **rec, "final_decision": rec.get("final_decision"), "is_final": i == len(records) - 1,
                     "bad_fix_type": policy.bad_fix(patch, first.error) if rec.get("patch_applied") else None})
+    diff = RUNS / first.run_id / "heal.diff"  # written by the agent loop on auto_apply
+    log = write_heal_log(joined, out, diff if out[-1]["final_decision"] == "auto_apply" and diff.exists() else None)
     ATTEMPTS.parent.mkdir(exist_ok=True)
     with ATTEMPTS.open("a") as f:
-        for rec in out:
-            f.write(json.dumps(rec, default=str) + "\n")
+        for rec in out:  # the index line: everything but the transcript, which lives in the heal file
+            f.write(json.dumps({**{k: v for k, v in rec.items() if k != "transcript"}, "heal_log": str(log)},
+                               default=str) + "\n")
     return out
+
+
+def write_heal_log(joined: dict, attempts: list[dict], approved_diff: Path | None) -> Path:
+    """One file per heal with every attempt in full, transcripts included. Kept under logs/, which the
+    agent's guard denies, because it holds the truth labels."""
+    path = HEALS / f"{joined['heal_id']}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({**joined, "final_decision": attempts[-1]["final_decision"],
+                                "attempts_used": len(attempts),
+                                "cost_usd": round(sum(a["cost_usd"] for a in attempts), 6),
+                                "approved_diff": str(approved_diff) if approved_diff else None,
+                                "attempts": attempts}, indent=1, default=str))
+    return path
 
 
 def main() -> None:
@@ -89,7 +108,7 @@ def main() -> None:
     ap.add_argument("--slowmo", type=float, default=0, help="ms between Playwright actions (demo)")
     a = ap.parse_args()
     for rec in heal_case(a.variant, a.case, split=a.split, headed=a.headed, slowmo=a.slowmo):
-        print(json.dumps({k: v for k, v in rec.items() if k != "calls"}))
+        print(json.dumps({k: v for k, v in rec.items() if k not in ("calls", "transcript")}))
 
 
 if __name__ == "__main__":

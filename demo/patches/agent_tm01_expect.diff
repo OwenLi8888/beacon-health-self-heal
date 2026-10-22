@@ -1,0 +1,19 @@
+--- a/read_a1c.py
++++ b/read_a1c.py
+@@ -9,7 +9,7 @@
+ from datetime import date, datetime
+ from decimal import Decimal
+ 
+-from playwright.sync_api import FrameLocator, Page, sync_playwright
++from playwright.sync_api import FrameLocator, Page, expect, sync_playwright
+ 
+ from scripts.common import AmbiguousValue, ValueNotFound, login, step
+ 
+@@ -70,6 +70,7 @@
+ 
+     table = chart.get_by_role("table").filter(has=chart.get_by_role("columnheader", name="Result", exact=True))
+     table.wait_for()
++    expect(table.get_by_role("cell").filter(has_text=re.compile(r"\d{4}-\d{2}-\d{2}"))).not_to_have_count(0)
+     # Cells are padded with &nbsp;, which str.strip() removes.
+     headers = [h.strip() for h in table.get_by_role("columnheader").all_inner_texts()]
+     rows = []
