@@ -55,6 +55,8 @@ sudo apt-get install -y libnss3 libnspr4 libasound2t64
 make setup
 ```
 
+That package list is for Ubuntu 24.04 and later. On Ubuntu 22.04, use `libasound2` in place of `libasound2t64`. On any other distro, run `uv run playwright install-deps chromium` instead, which picks the right packages for your system (it also needs sudo).
+
 `make setup` creates `.env` from `.env.example`, installs the Python packages and Chromium, starts OpenEMR and MariaDB, loads the ten patients and saves a clean database snapshot. The first run pulls the Docker images, so give it a few minutes.
 
 To use the agent, open `.env` and paste your key into `ANTHROPIC_API_KEY=`. The file is gitignored. You don't need a key to run the scripts, the demos without the agent, or the scorecards.
