@@ -33,6 +33,7 @@ PRICES = {
     "claude-sonnet-5-5": (2.00, 10.00, 0.20, 2.50),
 }
 FAILED = {"no_submit", "patch_failed", "rerun_failed"}  # attempt outcomes that lead to a retry
+RESULT_CAP = 3000  # chars of each tool result kept in the transcript
 
 # judge(sandbox_script, diagnosis, diff_lines, touched_lines) ->
 #   {"script_passed", "oracle_passed", "decision", "rerun_run_id", "bundle_dir", "error"}
@@ -70,22 +71,48 @@ def _brief(bundle_dir: Path, feedback: str | None) -> str:
     return "\n\n".join(parts)
 
 
+def _block(b) -> dict:
+    """An assistant content block as plain JSON for the transcript."""
+    if b.type == "text":
+        return {"type": "text", "text": b.text}
+    if b.type == "tool_use":
+        return {"type": "tool_use", "name": b.name, "input": b.input}
+    return {"type": b.type}
+
+
+def _result(r: dict) -> dict:
+    """A tool result as plain JSON for the transcript: images by kind only, long text capped."""
+    content = r["content"]
+    if isinstance(content, list):
+        content = "\n".join("[image]" if c.get("type") == "image" else c.get("text", f"[{c.get('type')}]")
+                            for c in content)
+    if len(content) > RESULT_CAP:
+        content = content[:RESULT_CAP] + " [truncated]"
+    return {"is_error": r.get("is_error", False), "content": content}
+
+
 def _diagnose(client, model: str, bundle_dir: Path, sandbox: Path, feedback: str | None) -> tuple[dict, Diagnosis | None]:
-    """One attempt's tool loop. Returns usage totals and the diagnosis (None if never submitted)."""
+    """One attempt's tool loop. Returns usage totals and the diagnosis (None if never submitted).
+
+    `transcript` is a record of the loop for the heal log. It is never sent back to the model.
+    """
     box = Toolbox(bundle_dir, sandbox)
     messages = [{"role": "user", "content": _brief(bundle_dir, feedback)}]
+    transcript = [{"kind": "brief", "text": messages[0]["content"]}]
     calls, tool_calls = [], 0
     for _ in range(MAX_MODEL_CALLS):
         try:
             resp = client.messages.create(model=model, max_tokens=16000, system=SYSTEM, tools=TOOLS, messages=messages)
         except anthropic.APIError as e:  # after the SDK's own retries; keep what was already spent
-            return {**_totals(calls, tool_calls), "api_error": f"{type(e).__name__}: {e}"}, None
+            return {**_totals(calls, tool_calls, transcript), "api_error": f"{type(e).__name__}: {e}"}, None
         calls.append(_cost(model, resp.usage))
         print(json.dumps({"event": "model_call", "model": model, **calls[-1]}), file=sys.stderr, flush=True)
         messages.append({"role": "assistant", "content": resp.content})
+        transcript.append({"kind": "assistant", "blocks": [_block(b) for b in resp.content], "usage": calls[-1]})
         uses = [b for b in resp.content if b.type == "tool_use"]
         if not uses:
             messages.append({"role": "user", "content": "Call submit_diagnosis to finish this attempt."})
+            transcript.append({"kind": "nudge", "text": messages[-1]["content"]})
             continue
         results = []
         for use in uses:
@@ -97,7 +124,10 @@ def _diagnose(client, model: str, bundle_dir: Path, sandbox: Path, feedback: str
             tool_calls += 1
             if use.name == "submit_diagnosis":
                 try:
-                    return _totals(calls, tool_calls), Diagnosis(**use.input)
+                    diag = Diagnosis(**use.input)
+                    if results:  # results of calls made alongside the submit in the same turn
+                        transcript.append({"kind": "tool_results", "results": [_result(r) for r in results]})
+                    return _totals(calls, tool_calls, transcript), diag
                 except ValidationError as e:
                     results.append({"type": "tool_result", "tool_use_id": use.id, "is_error": True,
                                     "content": f"Invalid diagnosis: {e}"})
@@ -108,19 +138,21 @@ def _diagnose(client, model: str, bundle_dir: Path, sandbox: Path, feedback: str
             except Exception as e:  # unknown tool, denied path, bad args: tell the model, don't crash
                 results.append({"type": "tool_result", "tool_use_id": use.id, "is_error": True,
                                 "content": f"{type(e).__name__}: {e}"})
+        transcript.append({"kind": "tool_results", "results": [_result(r) for r in results]})
         if tool_calls >= MAX_TOOL_CALLS:
             break
         if tool_calls >= MAX_TOOL_CALLS - 1:
             results.append({"type": "text", "text": "One tool call left: call submit_diagnosis now."})
+            transcript.append({"kind": "nudge", "text": results[-1]["text"]})
         messages.append({"role": "user", "content": results})
-    return _totals(calls, tool_calls), None
+    return _totals(calls, tool_calls, transcript), None
 
 
-def _totals(calls: list[dict], tool_calls: int) -> dict:
+def _totals(calls: list[dict], tool_calls: int, transcript: list[dict]) -> dict:
     keys = ["input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens"]
     out = {k: sum(c[k] for c in calls) for k in keys}
     out.update(cost_usd=round(sum(c["cost_usd"] for c in calls), 6), tool_calls=tool_calls,
-               model_calls=len(calls), calls=calls)
+               model_calls=len(calls), calls=calls, transcript=transcript)
     return out
 
 
